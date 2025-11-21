@@ -1,0 +1,33 @@
+{
+	"id": "hook_9edO4p4c9lTqJOwZ",
+	"account": { "id": "acc_x3VYLbWTqWFwKEZn", "name": "UEB - test" },
+	"type": "order.paid",
+	"created_at": "2025-10-23T15:00:35.9587349Z",
+	"data": {
+	  "amount": 3000,
+	  "charges": [ ["Object"] ],
+	  "closed": true,
+	  "closed_at": "2025-10-23T15:00:34",
+	  "code": "Q784F3FXVO",
+	  "created_at": "2025-10-23T15:00:34",
+	  "currency": "BRL",
+	  "customer": {
+		"created_at": "2025-10-23T13:27:01",
+		"delinquent": false,
+		"document": "12345678905",
+		"document_type": "cpf",
+		"email": "lucas.ferreira4@example.com",
+		"id": "cus_mqy7LBNty3CWLbBa",
+		"metadata": {},
+		"name": "Lucas 4",
+		"phones": ["Object"],
+		"type": "individual",
+		"updated_at": "2025-10-23T13:27:01"
+	  },
+	  "id": "or_z2pGdk9fof0EXbQY",
+	  "items": [ ["Object"] ],
+	  "metadata": {},
+	  "status": "paid",
+	  "updated_at": "2025-10-23T15:00:34"
+	}
+  }

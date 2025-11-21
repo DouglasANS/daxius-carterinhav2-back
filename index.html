@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contador de Palavras</title>
+</head>
+<body>
+    <h1>Contador de Palavras e Agrupamento por Letra Inicial</h1>
+    <textarea id="textInput" rows="10" cols="50" placeholder="Digite seu texto aqui..."></textarea>
+    <br><br>
+    <button onclick="contarPalavras()">Contar Palavras</button>
+
+    <h2>Total de palavras: <span id="wordCount">0</span></h2>
+    <h2>Palavras agrupadas por letra inicial:</h2>
+    <div id="wordsByInitial"></div>
+
+    <script>
+        function contarPalavras() {
+            const text = document.getElementById("textInput").value.trim();
+            if (text === "") {
+                document.getElementById("wordCount").innerText = "0";
+                document.getElementById("wordsByInitial").innerHTML = "";
+                return;
+            }
+
+            const words = text.split(/\s+/);
+            const wordCount = words.length;
+
+            // Cria um objeto para armazenar as palavras por letra inicial
+            const wordsByInitial = {};
+            words.forEach(word => {
+                const initial = word[0].toLowerCase();
+                if (!wordsByInitial[initial]) {
+                    wordsByInitial[initial] = [];
+                }
+                wordsByInitial[initial].push(word);
+            });
+
+            // Atualiza a contagem de palavras
+            document.getElementById("wordCount").innerText = wordCount;
+
+            // Atualiza o agrupamento de palavras por letra inicial
+            const wordsByInitialDiv = document.getElementById("wordsByInitial");
+            wordsByInitialDiv.innerHTML = "";
+            for (const [initial, wordList] of Object.entries(wordsByInitial)) {
+                const initialDiv = document.createElement("div");
+                initialDiv.innerHTML = `<strong>${initial.toUpperCase()}:</strong> ${wordList.join(", ")}`;
+                wordsByInitialDiv.appendChild(initialDiv);
+            }
+        }
+    </script>
+</body>
+</html>

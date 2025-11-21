@@ -1,0 +1,93 @@
+{
+	"id": "or_WeDqKBQu6uag26oJ",
+	"code": "M4GJIKIZ4X",
+	"amount": 5000,
+	"currency": "BRL",
+	"closed": true,
+	"items": [
+		{
+			"id": "oi_ZBpM27khKh32goqm",
+			"type": "product",
+			"description": "Carteirinha Física",
+			"amount": 5000,
+			"quantity": 1,
+			"status": "active",
+			"created_at": "2025-10-22T13:23:30Z",
+			"updated_at": "2025-10-22T13:23:30Z",
+			"code": "1"
+		}
+	],
+	"customer": {
+		"id": "cus_e7bmYPqTZT5OGgNR",
+		"name": "Douglas Teste4",
+		"email": "teste4@gmail.com",
+		"document": "86581190098",
+		"document_type": "CPF",
+		"type": "individual",
+		"delinquent": false,
+		"created_at": "2025-10-20T17:10:58Z",
+		"updated_at": "2025-10-22T12:10:27Z",
+		"phones": {
+			"home_phone": {
+				"country_code": "55",
+				"number": "987654321",
+				"area_code": "81"
+			}
+		}
+	},
+	"status": "pending",
+	"created_at": "2025-10-22T13:23:30Z",
+	"updated_at": "2025-10-22T13:23:30Z",
+	"closed_at": "2025-10-22T13:23:30Z",
+	"charges": [
+		{
+			"id": "ch_GAnoBboILIEObq8E",
+			"code": "M4GJIKIZ4X",
+			"gateway_id": "28086",
+			"amount": 5000,
+			"status": "pending",
+			"currency": "BRL",
+			"payment_method": "pix",
+			"created_at": "2025-10-22T13:23:30Z",
+			"updated_at": "2025-10-22T13:23:30Z",
+			"customer": {
+				"id": "cus_e7bmYPqTZT5OGgNR",
+				"name": "Douglas Teste4",
+				"email": "teste4@gmail.com",
+				"document": "86581190098",
+				"document_type": "CPF",
+				"type": "individual",
+				"delinquent": false,
+				"created_at": "2025-10-20T17:10:58Z",
+				"updated_at": "2025-10-22T12:10:27Z",
+				"phones": {
+					"home_phone": {
+						"country_code": "55",
+						"number": "987654321",
+						"area_code": "81"
+					}
+				}
+			},
+			"last_transaction": {
+				"pix_provider_tid": "28086",
+				"qr_code": "https://digital.mundipagg.com/pix/",
+				"qr_code_url": "https://api.pagar.me/core/v5/transactions/tran_Vn8EOvyhqhNgM3W4/qrcode?payment_method=pix",
+				"expires_at": "2025-10-22T13:53:30Z",
+				"id": "tran_Vn8EOvyhqhNgM3W4",
+				"transaction_type": "pix",
+				"gateway_id": "28086",
+				"amount": 5000,
+				"status": "waiting_payment",
+				"success": true,
+				"created_at": "2025-10-22T13:23:30Z",
+				"updated_at": "2025-10-22T13:23:30Z",
+				"gateway_response": {},
+				"antifraud_response": {},
+				"metadata": {}
+			}
+		}
+	]
+}
+
+
+
