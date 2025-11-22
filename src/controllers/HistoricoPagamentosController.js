@@ -223,6 +223,12 @@ module.exports = {
                     "ph.id",
                     "ph.user_id",
                     "ph.produto_id",
+                    "ph.pagarme_order_id",
+                    "ph.qr_code",
+                    "ph.qr_code_url",
+                    "ph.created_at_pagarme",
+                    "ph.expires_at_pagarme",
+                    "ph.updated_at_pagarme",
                     "p.nome as produto_nome",
                     "p.preco as produto_preco",
                     "ph.price",
@@ -239,6 +245,8 @@ module.exports = {
                 .where("ph.user_id", user_id)
                 .orderBy("ph.data_criacao", "desc");
 
+                console.log('transacoes====', transacoes)
+
             return res.json({
                 sucesso: true,
                 transacoes
@@ -251,5 +259,25 @@ module.exports = {
                 mensagem: "Erro ao buscar transações do usuário."
             });
         }
+    },
+    async atualizarTransacaoExpirada(req, res) {
+        try {
+            const { id } = req.body; // id da pagamentos_historico
+
+            const result = await knex('ueb_sistem.pagamentos_historico')
+                .where('id', id)
+                .update({
+                    status: "expired",
+                    data_atualizacao: knex.fn.now()
+                });
+
+            return res.json({ ok: true, updated: result });
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({
+                error: 'Erro ao atualizar status da transação para expired'
+            });
+        }
     }
+
 };

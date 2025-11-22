@@ -237,8 +237,8 @@ module.exports = {
                 email,
                 password: hash,
                 cpf,
-                rg,                     
-                data_nascimento,        
+                rg,
+                data_nascimento,
                 telefone,
                 role: "user",
                 criado_por: "self",
@@ -283,6 +283,8 @@ module.exports = {
                         }
                     }
                 );
+
+                console.log(response)
 
                 // 💾 Atualiza usuário com o ID do cliente no Pagar.me
                 await trx("ueb_sistem.users")
@@ -433,4 +435,23 @@ module.exports = {
         }
     }
     ,
+
+    async pagarMeUserID(req, res) {
+        try {
+            const { id } = req.body;
+
+            const result = await knex('ueb_sistem.users')
+                .select('pagarme_customer_id')
+                .where('id', id)     
+                .first();           
+            return res.json(result);
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({
+                error: 'Erro ao buscar pagarme_customer_id do usuário'
+            });
+        }
+    }
+
+
 };

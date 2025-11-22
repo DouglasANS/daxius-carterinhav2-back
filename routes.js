@@ -19,6 +19,7 @@ const hasRole = require('./src/middlewares/hasRole');
 routes.post('/register', authMiddleware, authController.registerByModerador);
 routes.post('/registeruser', authController.registerUser);
 routes.post('/login', authController.login);
+routes.post('/pagarmeuserid', authController.pagarMeUserID);
 
 /* MÉTRICAS */
 routes.post('/metricaslogin', MetricasController.index);
@@ -47,6 +48,7 @@ routes.post("/cadastrarcarteirinha", ProdutosController.cadastrarCarteirinha);
 /* routes.post("/verificarhistoricocarteirinha", HistoricoPagamentosController.verificarCarteirinha); */
 routes.post("/registrarCarteirinha", HistoricoPagamentosController.registrarOuAtualizar);
 routes.post("/listarTransacoes", HistoricoPagamentosController.listarTransacoes);
+routes.post("/atualizartransacaoexpirada", HistoricoPagamentosController.atualizarTransacaoExpirada);
 
 
 

@@ -1,19 +1,20 @@
 const knex = require('../database')
 
 module.exports = {
-    async index(req, res) {
-        try {
-            const results = await knex('ueb_sistem.produtos')
-                .select('*')
-                .where('tipo', 'carteirinha') // filtro solicitado
-                .orderBy('id', 'asc');
+    async index(req, res) { 
+    try {
+        const results = await knex('ueb_sistem.produtos')
+            .select('*')
+            .where({ tipo: 'carteirinha', ativo: 1 }) // 👈 agora filtra só ativos
+            .orderBy('id', 'asc');
 
-            return res.json(results);
-        } catch (error) {
-            console.error(error);
-            return res.status(500).json({ error: 'Erro ao buscar produtos do tipo carteirinha' });
-        }
-    },
+        return res.json(results);
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Erro ao buscar produtos do tipo carteirinha' });
+    }
+},
+
     async verificarCarteirinha(req, res) {
         try {
             const { user_id, ano } = req.body;
@@ -121,6 +122,8 @@ module.exports = {
 
             // 3️⃣ Calcular validade automaticamente
             const validade = `${Number(ano) + 1}-03-31`;
+
+            //TODO ADicionar imagem
 
             // 4️⃣ Preparar dados para inserir
             const novaCarteirinha = {
