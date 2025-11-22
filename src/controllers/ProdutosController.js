@@ -58,7 +58,104 @@ module.exports = {
                 error: "Erro ao verificar carteirinha"
             });
         }
+    },
+    async cadastrarCarteirinha(req, res) {
+        try {
+            const {
+                user_id,
+                instituicao,
+                curso,
+                nivel_ensino,
+                criadoPor_id,
+                ano,
+                cod_identificador = '7A137F5',
+                tipo_carteira,
+            } = req.body;
+
+            async function gerarCodUsoUnico() {
+                const gerarTextoAleatorio = (tamanho = 7) => {
+                    const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                    let resultado = '';
+                    for (let i = 0; i < tamanho; i++) {
+                        const indiceAleatorio = Math.floor(Math.random() * caracteres.length);
+                        resultado += caracteres[indiceAleatorio];
+                    }
+                    return resultado;
+                };
+
+                let codigo;
+                let existe = true;
+
+                while (existe) {
+                    codigo = gerarTextoAleatorio();
+
+                    const encontrado = await knex("ueb_sistem.carteirinha_user")
+                        .where("cod_uso", codigo)
+                        .first();
+
+                    existe = !!encontrado; // true se achou, false se não achou
+                }
+
+                return codigo;
+            }
+
+
+            // 1️⃣ Verificação dos campos obrigatórios
+            if (!user_id || !instituicao || !nivel_ensino || !ano) {
+                return res.status(400).json({
+                    error: "Campos obrigatórios: user_id, instituicao, nivel_ensino, ano"
+                });
+            }
+
+            // 2️⃣ Verificar se já existe carteirinha para esse user no ano
+            const carteiraExistente = await knex('ueb_sistem.carteirinha_user')
+                .where({ user_id, ano })
+                .first();
+
+            if (carteiraExistente) {
+                return res.json({
+                    statusRequest: false,
+                    message: `Já existe uma carteirinha cadastrada para o ano ${ano}.`
+                });
+            }
+
+            // 3️⃣ Calcular validade automaticamente
+            const validade = `${Number(ano) + 1}-03-31`;
+
+            // 4️⃣ Preparar dados para inserir
+            const novaCarteirinha = {
+                user_id,
+                instituicao,
+                curso: curso || null,
+                nivel_ensino,
+                validade,
+                cod_uso: await gerarCodUsoUnico() || null,
+                cod_identificador: cod_identificador || null,
+                tipo_carteira: tipo_carteira || null,
+                criadoPor_id: criadoPor_id || null,
+                ano,
+                status: null,
+                editavel: 1
+            };
+
+            const [idCriado] = await knex('ueb_sistem.carteirinha_user')
+                .insert(novaCarteirinha);
+
+            return res.json({
+                statusRequest: true,
+                message: "Carteirinha cadastrada com sucesso.",
+                id: idCriado
+            });
+
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({
+                error: "Erro ao cadastrar carteirinha"
+            });
+        }
     }
+
+
 
 
 };

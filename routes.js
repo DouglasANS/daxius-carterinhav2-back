@@ -40,6 +40,7 @@ routes.delete("/modulos_user/:id", ModulosUserController.delete);
 /* ProdutosController */
 routes.get("/produtos", ProdutosController.index);
 routes.post("/verificarcarteirinha", ProdutosController.verificarCarteirinha);
+routes.post("/cadastrarcarteirinha", ProdutosController.cadastrarCarteirinha);
 
 
 /* Pagamentos */

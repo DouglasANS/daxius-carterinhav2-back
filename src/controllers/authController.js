@@ -11,7 +11,7 @@ module.exports = {
         const criadoPor_id = req.user.id;
         const ip = req.user.ip;
         const userAgent = req.user.userAgent;
-    
+
         const {
             name,
             email,
@@ -29,9 +29,9 @@ module.exports = {
             image_base64,
             produto_id
         } = req.body;
-    
+
         const trx = await knex.transaction();
-    
+
         try {
             // 1️⃣ Verifica duplicidade de CPF e e-mail
             const existingCpf = await trx("ueb_sistem.users").where({ cpf }).first();
@@ -39,21 +39,21 @@ module.exports = {
                 await trx.rollback();
                 return res.status(409).json({ error: "CPF já cadastrado.", statusRequest: false });
             }
-    
+
             const existingEmail = await trx("ueb_sistem.users").where({ email }).first();
             if (existingEmail) {
                 await trx.rollback();
                 return res.status(409).json({ error: "E-mail já cadastrado.", statusRequest: false });
             }
-    
+
             // 2️⃣ Cria hash da senha
             const hash = await bcrypt.hash(password, 8);
-    
+
             // 3️⃣ Cria usuário e captura ID
             const telefone = phone
                 ? `${phone.country_code}${phone.area_code}${phone.number}`
                 : null;
-    
+
             const [userId] = await trx("ueb_sistem.users").insert({
                 name,
                 email,
@@ -66,12 +66,12 @@ module.exports = {
                 ativo: true,
                 data_cadastro: knex.fn.now(),
             });
-    
+
             // 4️⃣ Cria cliente no Pagar.me
             try {
                 const apiKey = process.env.PAGARME_API_KEY;
                 const token = Buffer.from(apiKey + ':').toString('base64');
-    
+
                 const customerData = {
                     external_id: `cli_${userId}_${Date.now()}`,
                     name: name || 'Cliente Padrão',
@@ -90,7 +90,7 @@ module.exports = {
                         }
                         : undefined
                 };
-    
+
                 const response = await axios.post(
                     'https://api.pagar.me/core/v5/customers',
                     customerData,
@@ -102,19 +102,19 @@ module.exports = {
                         }
                     }
                 );
-    
+
                 // Atualiza usuário com o ID do cliente Pagar.me
                 await trx("ueb_sistem.users")
                     .where({ id: userId })
                     .update({ pagarme_customer_id: response.data.id });
-    
+
                 console.log("Cliente criado no Pagar.me:", response.data.id);
-    
+
             } catch (pagarmeError) {
                 console.error("Erro ao criar cliente no Pagar.me:", pagarmeError.response?.data || pagarmeError.message);
                 // Continua execução mesmo que falhe no Pagar.me
             }
-    
+
             // 5️⃣ Cria carteirinha vinculada
             const [carteirinhaId] = await trx("ueb_sistem.carteirinha_user").insert({
                 user_id: userId,
@@ -126,7 +126,7 @@ module.exports = {
                 criadoPor_id,
                 data_criacao: knex.fn.now(),
             });
-    
+
             // 6️⃣ Salva imagem Base64 (caso enviada)
             if (image_base64) {
                 await trx("ueb_sistem.carteirinha_image").insert({
@@ -135,16 +135,16 @@ module.exports = {
                     data_criacao: knex.fn.now(),
                 });
             }
-    
+
             // 7️⃣ Busca produto e cria pagamento manual (caso tenha produto)
             if (produto_id) {
                 const produto = await trx("ueb_sistem.produtos").where({ id: produto_id, ativo: true }).first();
-    
+
                 if (!produto) {
                     await trx.rollback();
                     return res.status(404).json({ error: "Produto não encontrado ou inativo.", statusRequest: false });
                 }
-    
+
                 await trx("ueb_sistem.pagamentos_historico").insert({
                     user_id: userId,
                     carteirinha_id: carteirinhaId,
@@ -156,43 +156,44 @@ module.exports = {
                     data_confirmacao: knex.fn.now(),
                 });
             }
-    
+
             // 8️⃣ Cria métrica de criação
             const now = new Date();
             const ano = now.getFullYear();
-    
+
             await trx("ueb_sistem.metricas_registro_carteirinha").insert({
                 data_cadastro: now,
                 id_funcionario: criadoPor_id,
                 ano,
                 estudante_id: userId,
             });
-    
+
             // 9️⃣ Finaliza transação
             await trx.commit();
-    
+
             // 🔑 Gera token JWT
             const token = jwt.sign(
                 { id: userId, email, cpf, role },
                 JWT_SECRET,
                 { expiresIn: "8h" }
             );
-    
+
             return res.status(201).json({
                 message: "Usuário, carteirinha, imagem, pagamento, métricas e cliente Pagar.me criados com sucesso.",
                 statusRequest: true,
             });
-    
+
         } catch (error) {
             await trx.rollback();
             console.error(error);
             return res.status(500).json({ error: "Erro ao registrar usuário", statusRequest: false });
         }
     },
-    
+
 
     async registerUser(req, res) {
-        const { name, email, password, cpf, phone } = req.body;
+        const { name, email, password, cpf, phone, data_nascimento, rg } = req.body;
+
         const trx = await knex.transaction();
 
         try {
@@ -236,6 +237,8 @@ module.exports = {
                 email,
                 password: hash,
                 cpf,
+                rg,                     
+                data_nascimento,        
                 telefone,
                 role: "user",
                 criado_por: "self",
@@ -243,6 +246,7 @@ module.exports = {
                 ativo: true,
                 data_cadastro: knex.fn.now()
             });
+
 
             // 🪙 Cria cliente no Pagar.me
             try {
