@@ -1,19 +1,19 @@
 const knex = require('../database')
 
 module.exports = {
-    async index(req, res) { 
-    try {
-        const results = await knex('ueb_sistem.produtos')
-            .select('*')
-            .where({ tipo: 'carteirinha', ativo: 1 }) // 👈 agora filtra só ativos
-            .orderBy('id', 'asc');
+    async index(req, res) {
+        try {
+            const results = await knex('ueb_sistem.produtos')
+                .select('*')
+                .where({ tipo: 'carteirinha', ativo: 1 }) // 👈 agora filtra só ativos
+                .orderBy('id', 'asc');
 
-        return res.json(results);
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ error: 'Erro ao buscar produtos do tipo carteirinha' });
-    }
-},
+            return res.json(results);
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ error: 'Erro ao buscar produtos do tipo carteirinha' });
+        }
+    },
 
     async verificarCarteirinha(req, res) {
         try {
@@ -71,6 +71,7 @@ module.exports = {
                 ano,
                 cod_identificador = '7A137F5',
                 tipo_carteira,
+                image, // <- imagem base64 ou URL enviada pelo front
             } = req.body;
 
             async function gerarCodUsoUnico() {
@@ -94,12 +95,11 @@ module.exports = {
                         .where("cod_uso", codigo)
                         .first();
 
-                    existe = !!encontrado; // true se achou, false se não achou
+                    existe = !!encontrado;
                 }
 
                 return codigo;
             }
-
 
             // 1️⃣ Verificação dos campos obrigatórios
             if (!user_id || !instituicao || !nivel_ensino || !ano) {
@@ -123,8 +123,6 @@ module.exports = {
             // 3️⃣ Calcular validade automaticamente
             const validade = `${Number(ano) + 1}-03-31`;
 
-            //TODO ADicionar imagem
-
             // 4️⃣ Preparar dados para inserir
             const novaCarteirinha = {
                 user_id,
@@ -141,8 +139,17 @@ module.exports = {
                 editavel: 1
             };
 
+            // 5️⃣ Inserir a carteirinha
             const [idCriado] = await knex('ueb_sistem.carteirinha_user')
                 .insert(novaCarteirinha);
+
+            // 6️⃣ Inserir a imagem na tabela "carteirinha_image"
+            if (image) {
+                await knex("ueb_sistem.carteirinha_image").insert({
+                    user_id: user_id,
+                    image: image, // base64, blob ou URL — do jeito que vier do front
+                });
+            }
 
             return res.json({
                 statusRequest: true,
@@ -157,6 +164,7 @@ module.exports = {
             });
         }
     }
+
 
 
 

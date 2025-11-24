@@ -49,6 +49,7 @@ routes.post("/cadastrarcarteirinha", ProdutosController.cadastrarCarteirinha);
 routes.post("/registrarCarteirinha", HistoricoPagamentosController.registrarOuAtualizar);
 routes.post("/listarTransacoes", HistoricoPagamentosController.listarTransacoes);
 routes.post("/atualizartransacaoexpirada", HistoricoPagamentosController.atualizarTransacaoExpirada);
+routes.post("/verificarpermissaocarteirinha", HistoricoPagamentosController.verificarPermissaoCarteirinha);
 
 
 

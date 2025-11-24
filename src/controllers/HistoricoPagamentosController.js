@@ -245,7 +245,7 @@ module.exports = {
                 .where("ph.user_id", user_id)
                 .orderBy("ph.data_criacao", "desc");
 
-                console.log('transacoes====', transacoes)
+            console.log('transacoes====', transacoes)
 
             return res.json({
                 sucesso: true,
@@ -279,5 +279,102 @@ module.exports = {
             });
         }
     }
+
+    ,
+    async verificarPermissaoCarteirinha(req, res) {
+        try {
+
+            const { user_id } = req.body;
+
+            if (!user_id) {
+                return res.status(400).json({
+                    statusRequest: false,
+                    message: "Envie o user_id."
+                });
+            }
+
+            // 1️⃣ Verificar pagamento
+            const pagamento = await knex("ueb_sistem.pagamentos_historico")
+                .where({ user_id })
+                .where("status", "paid")
+                .first();
+
+            if (!pagamento) {
+                return res.json({
+                    statusRequest: false,
+                    message: "Pagamento não identificado. Realize o pagamento para acessar sua carteirinha."
+                });
+            }
+
+            // 2️⃣ Buscar dados do usuário
+            const usuario = await knex("ueb_sistem.users")
+                .select("name", "data_nascimento", "cpf", "rg")
+                .where("id", user_id)
+                .first();
+
+            if (!usuario) {
+                return res.json({
+                    statusRequest: false,
+                    message: "Usuário não encontrado."
+                });
+            }
+
+            // 4️⃣ Buscar dados da carteirinha
+            const carteirinha = await knex("ueb_sistem.carteirinha_user")
+                .select(
+                    "instituicao",
+                    "curso",
+                    "nivel_ensino",
+                    "validade",
+                    "cod_identificador",
+                    "cod_uso",
+                    "ano"
+                )
+                .where("user_id", user_id)
+                .orderBy("ano", "desc")
+                .first(); // pega a mais recente
+
+            if (!carteirinha) {
+                return res.json({
+                    statusRequest: false,
+                    message: "Nenhuma carteirinha cadastrada para esse usuário."
+                });
+            }
+
+               // 3️⃣ Buscar imagem da carteirinha
+            const imagem = await knex("ueb_sistem.carteirinha_image")
+                .select("image")
+                .where("user_id", user_id)
+                .first();
+
+            // 5️⃣ Retornar tudo junto
+            return res.json({
+                statusRequest: true,
+                message: "Acesso liberado.",
+                carteirinha: {
+                    codigoUso: carteirinha.cod_uso,
+                    cpf: usuario.cpf,
+                    dataNascimento: usuario.data_nascimento,
+                    escolaridade: usuario.escolaridade || null,
+                    nome: usuario.name,
+                    curso: carteirinha.curso,
+                    rg: usuario.rg || null,
+                    validadeCarteirinha: carteirinha.validade,
+                    imagem: imagem?.image || null,
+                    email: usuario.email,
+                    instituicao: carteirinha.instituicao,
+                    ano: carteirinha.ano, 
+                }
+            });
+
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({
+                statusRequest: false,
+                message: "Erro ao verificar permissão da carteirinha."
+            });
+        }
+    }
+
 
 };
