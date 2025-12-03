@@ -163,7 +163,170 @@ module.exports = {
                 error: "Erro ao cadastrar carteirinha"
             });
         }
+    },
+
+
+
+
+    async listarProdutosFaltantes(req, res) {
+        try {
+            const { user_id } = req.body;
+
+            // 0. Buscar ano atual da carteira
+            const config = await knex("ueb_sistem.current_carteirinha")
+                .where({ id: 1 })
+                .first();
+
+            const anoAtual = config?.ano || 2025;
+
+            // 2. Buscar produtos ativos do ano ATUAL
+            const produtos = await knex("ueb_sistem.produtos")
+                .where({ tipo: "carteirinha", ativo: 1, ano: anoAtual })
+                .select("*");
+
+            // 3. Buscar todos os históricos do usuário para o ANO ATUAL
+            const historicos = await knex("ueb_sistem.pagamentos_historico as h")
+                .leftJoin("ueb_sistem.produtos as p", "h.produto_id", "p.id")
+                .where("h.user_id", user_id)
+                .andWhere("p.ano", anoAtual)
+                .select("h.*", "p.ano as produto_ano");
+
+            // 4. Montar produtos com statusHistorico
+            const produtosComStatus = [];
+
+            for (const prod of produtos) {
+                const histProd = historicos.filter(h => h.produto_id === prod.id);
+
+                let statusHistorico = "none";
+                let ultimoHistorico = null; // 👈 aqui guardamos o único que vai pro front
+
+                if (histProd.length > 0) {
+
+                    // 1️⃣ Se tiver PAID → pega o último PAID
+                    const pagos = histProd.filter(h => h.status === "paid");
+                    if (pagos.length > 0) {
+                        const ultimoPago = pagos.sort(
+                            (a, b) => new Date(b.data_criacao) - new Date(a.data_criacao)
+                        )[0];
+
+                        statusHistorico = "paid";
+                        ultimoHistorico = ultimoPago; // 👈 envia só ele
+                    }
+                    else {
+                        // 2️⃣ Não tem PAID → pegar pendings
+                        const pendings = histProd.filter(h => h.status === "pending");
+
+                        if (pendings.length > 0) {
+                            const ultimoPending = pendings.sort(
+                                (a, b) => new Date(b.data_criacao) - new Date(a.data_criacao)
+                            )[0];
+
+                            const now = new Date();
+                            const expiresAt = new Date(ultimoPending.expires_at_pagarme);
+
+                            if (now > expiresAt) {
+                                // expirou → atualizar no banco
+                                statusHistorico = "expired";
+                                await knex("ueb_sistem.pagamentos_historico")
+                                    .where({ id: ultimoPending.id })
+                                    .update({ status: "expired" });
+
+                                ultimoHistorico = {
+                                    ...ultimoPending,
+                                    status: "expired"
+                                };
+                            } else {
+                                statusHistorico = "pending";
+                                ultimoHistorico = ultimoPending;
+                            }
+                        }
+                        else {
+                            // 3️⃣ Só expirados, pegar o último
+                            const expirados = histProd.filter(h => h.status === "expired");
+
+                            if (expirados.length > 0) {
+                                const ultimoExpirado = expirados.sort(
+                                    (a, b) => new Date(b.data_criacao) - new Date(a.data_criacao)
+                                )[0];
+
+                                statusHistorico = "expired";
+                                ultimoHistorico = ultimoExpirado;
+                            }
+                        }
+                    }
+                }
+
+                produtosComStatus.push({
+                    ...prod,
+                    statusHistorico,
+                    historico: ultimoHistorico // 👈 SOMENTE 1 OBJETO
+                });
+            }
+
+
+
+            // --------------------------------------------------------
+            // 5. 🔥 NOVA REGRA PRINCIPAL: esconder os produtos maiores
+            // --------------------------------------------------------
+
+            // 0. Identificar produtos A, B e C
+            const produtoA = produtosComStatus.find(
+                p => p.digital === 1 && p.fisica === 0 && p.frete === 0
+            );
+
+            const produtoB = produtosComStatus.find(
+                p => p.digital === 0 && p.fisica === 1 && p.frete === 1
+            );
+
+            const produtoC = produtosComStatus.find(
+                p => p.digital === 1 && p.fisica === 1 && p.frete === 1
+            );
+
+            // Estados
+            const digitalPago = produtoA?.statusHistorico === "paid";
+            const comboPago = produtoC?.statusHistorico === "paid";
+
+            // --------------------------------------------------------
+            // 🆕 REGRA NOVA: se o C (1,1,1) estiver pago → mostrar apenas ele
+            // --------------------------------------------------------
+            if (comboPago) {
+                return res.json([produtoC]);  // ← apenas ele
+            }
+
+            // --------------------------------------------------------
+            // Regras antigas continuam abaixo
+            // --------------------------------------------------------
+
+            let produtosFiltrados;
+
+            if (digitalPago) {
+                // 👉 A pago → mostrar A + B (0,1,1)
+                produtosFiltrados = produtosComStatus.filter(p =>
+                    (p.digital === 1 && p.fisica === 0 && p.frete === 0) ||  // A
+                    (p.digital === 0 && p.fisica === 1 && p.frete === 1)     // B
+                );
+            } else {
+                // 👉 A não pago → mostrar A + C (1,1,1)
+                produtosFiltrados = produtosComStatus.filter(p =>
+                    (p.digital === 1 && p.fisica === 0 && p.frete === 0) ||  // A
+                    (p.digital === 1 && p.fisica === 1 && p.frete === 1)     // C
+                );
+            }
+
+            return res.json(produtosFiltrados);
+
+
+
+
+        } catch (err) {
+            console.error(err);
+            return res.status(500).json({ error: "Erro ao filtrar produtos" });
+        }
     }
+
+
+
+
 
 
 

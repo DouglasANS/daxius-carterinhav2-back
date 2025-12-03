@@ -328,7 +328,8 @@ module.exports = {
                     "validade",
                     "cod_identificador",
                     "cod_uso",
-                    "ano"
+                    "ano",
+                    "approved",
                 )
                 .where("user_id", user_id)
                 .orderBy("ano", "desc")
@@ -338,6 +339,13 @@ module.exports = {
                 return res.json({
                     statusRequest: false,
                     message: "Nenhuma carteirinha cadastrada para esse usuário."
+                });
+            }
+
+            if (carteirinha?.approved == 0) {
+                return res.json({
+                    statusRequest: false,
+                    message: "Verificação de carteirinha pendente!"
                 });
             }
 

@@ -4,6 +4,7 @@ const routes = express.Router()  //poderia ser app no routes
 
 
 const authController = require('./src/controllers/authController');
+const authAdmController = require('./src/controllers/authAdmController');
 const MetricasController = require('./src/controllers/MetricasController');
 const ModulosController = require('./src/controllers/ModulosController');
 const ModulosUserController = require('./src/controllers/ModulosUSerController');
@@ -20,6 +21,9 @@ routes.post('/register', authMiddleware, authController.registerByModerador);
 routes.post('/registeruser', authController.registerUser);
 routes.post('/login', authController.login);
 routes.post('/pagarmeuserid', authController.pagarMeUserID);
+
+
+routes.post('/loginsistem', authAdmController.login);
 
 /* MÉTRICAS */
 routes.post('/metricaslogin', MetricasController.index);
@@ -42,6 +46,7 @@ routes.delete("/modulos_user/:id", ModulosUserController.delete);
 routes.get("/produtos", ProdutosController.index);
 routes.post("/verificarcarteirinha", ProdutosController.verificarCarteirinha);
 routes.post("/cadastrarcarteirinha", ProdutosController.cadastrarCarteirinha);
+routes.post("/listarprodutosfaltantes", ProdutosController.listarProdutosFaltantes);
 
 
 /* Pagamentos */
