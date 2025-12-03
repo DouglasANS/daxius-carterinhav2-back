@@ -5,6 +5,7 @@ const routes = express.Router()  //poderia ser app no routes
 
 const authController = require('./src/controllers/authController');
 const authAdmController = require('./src/controllers/authAdmController');
+const UtilsAdmController = require('./src/controllers/UtilsAdmController');
 const MetricasController = require('./src/controllers/MetricasController');
 const ModulosController = require('./src/controllers/ModulosController');
 const ModulosUserController = require('./src/controllers/ModulosUSerController');
@@ -16,14 +17,21 @@ const WebhookPagarmeController = require('./src/controllers/WebhookPagarmeContro
 const authMiddleware = require('./src/middlewares/authMiddleware');
 const hasRole = require('./src/middlewares/hasRole');
 
+/* ADM AUTH */
+
+routes.post('/loginsistem', authAdmController.login);
+routes.post('/verifycpfexist', UtilsAdmController.verifyCpfExist);
+
+
+routes.post('/registeradm', authMiddleware, authController.registerByModerador);
+
+
 /* AUTH */
-routes.post('/register', authMiddleware, authController.registerByModerador);
 routes.post('/registeruser', authController.registerUser);
 routes.post('/login', authController.login);
 routes.post('/pagarmeuserid', authController.pagarMeUserID);
 
 
-routes.post('/loginsistem', authAdmController.login);
 
 /* MÉTRICAS */
 routes.post('/metricaslogin', MetricasController.index);

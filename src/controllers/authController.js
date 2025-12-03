@@ -11,6 +11,8 @@ module.exports = {
         const criadoPor_id = req.user.id;
         const ip = req.user.ip;
         const userAgent = req.user.userAgent;
+ 
+ 
 
         const {
             name,
@@ -24,13 +26,50 @@ module.exports = {
             instituicao,
             curso,
             nivel_ensino,
-            validade,
             tipo_carteira,
+            cod_identificador = '7A137F5',
             image_base64,
             produto_id
         } = req.body;
 
         const trx = await knex.transaction();
+
+        const config = await knex("ueb_sistem.current_carteirinha")
+            .where({ id: 1 })
+            .first();
+
+        const anoAtual = config?.ano || 2025;
+
+        // ⬇️ NOVO: gera validade automática
+        const validadeGerada = `${anoAtual + 1}-03-31`; // formato ISO recomendado
+
+
+        async function gerarCodUsoUnico() {
+            const gerarTextoAleatorio = (tamanho = 7) => {
+                const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                let resultado = '';
+                for (let i = 0; i < tamanho; i++) {
+                    const indiceAleatorio = Math.floor(Math.random() * caracteres.length);
+                    resultado += caracteres[indiceAleatorio];
+                }
+                return resultado;
+            };
+
+            let codigo;
+            let existe = true;
+
+            while (existe) {
+                codigo = gerarTextoAleatorio();
+
+                const encontrado = await trx("ueb_sistem.carteirinha_user")
+                    .where("cod_uso", codigo)
+                    .first();
+
+                existe = !!encontrado;
+            }
+
+            return codigo;
+        }
 
         try {
             // 1️⃣ Verifica duplicidade de CPF e e-mail
@@ -64,11 +103,12 @@ module.exports = {
                 data_nascimento,
                 role,
                 ativo: true,
+                criado_por: criadoPor_id,
                 data_cadastro: knex.fn.now(),
             });
 
             // 4️⃣ Cria cliente no Pagar.me
-            try {
+           /*  try {
                 const apiKey = process.env.PAGARME_API_KEY;
                 const token = Buffer.from(apiKey + ':').toString('base64');
 
@@ -113,7 +153,12 @@ module.exports = {
             } catch (pagarmeError) {
                 console.error("Erro ao criar cliente no Pagar.me:", pagarmeError.response?.data || pagarmeError.message);
                 // Continua execução mesmo que falhe no Pagar.me
-            }
+            } */
+
+            // Busca produto
+            const produto = await trx("ueb_sistem.produtos")
+                .where({ id: produto_id, ativo: true })
+                .first(); 
 
             // 5️⃣ Cria carteirinha vinculada
             const [carteirinhaId] = await trx("ueb_sistem.carteirinha_user").insert({
@@ -121,11 +166,19 @@ module.exports = {
                 instituicao,
                 curso,
                 nivel_ensino,
-                validade,
+                validade: validadeGerada,
                 tipo_carteira,
+                cod_uso: await gerarCodUsoUnico(),
+                cod_identificador: cod_identificador || null,
                 criadoPor_id,
                 data_criacao: knex.fn.now(),
+
+                fisica: produto?.fisica,
+                digital: produto?.digital,
+                frete: produto?.frete,
+                approved: 1,
             });
+
 
             // 6️⃣ Salva imagem Base64 (caso enviada)
             if (image_base64) {
@@ -138,7 +191,7 @@ module.exports = {
 
             // 7️⃣ Busca produto e cria pagamento manual (caso tenha produto)
             if (produto_id) {
-                const produto = await trx("ueb_sistem.produtos").where({ id: produto_id, ativo: true }).first();
+
 
                 if (!produto) {
                     await trx.rollback();
@@ -171,12 +224,6 @@ module.exports = {
             // 9️⃣ Finaliza transação
             await trx.commit();
 
-            // 🔑 Gera token JWT
-            const token = jwt.sign(
-                { id: userId, email, cpf, role },
-                JWT_SECRET,
-                { expiresIn: "8h" }
-            );
 
             return res.status(201).json({
                 message: "Usuário, carteirinha, imagem, pagamento, métricas e cliente Pagar.me criados com sucesso.",
@@ -442,8 +489,8 @@ module.exports = {
 
             const result = await knex('ueb_sistem.users')
                 .select('pagarme_customer_id')
-                .where('id', id)     
-                .first();           
+                .where('id', id)
+                .first();
             return res.json(result);
         } catch (error) {
             console.error(error);

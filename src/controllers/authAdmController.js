@@ -15,7 +15,7 @@ module.exports = {
 
         try {
             // Verificar se email existe
-            const already = await knex("ueb_sistem.users_sistem")
+            const already = await knex("ueb_sistem.users")
                 .where({ email })
                 .first();
 
@@ -31,14 +31,14 @@ module.exports = {
             const hash = await bcrypt.hash(senha, salt);
 
             // Criar usuário (tipo = 1 = FUNCIONÁRIO)
-            const [id] = await knex("ueb_sistem.users_sistem").insert({
+            const [id] = await knex("ueb_sistem.users").insert({
                 nome,
                 email,
                 senha: hash,
-                tipo: 1, // funcionário
+                role: 1,  
                 ativo: 1,
                 criado_em: knex.fn.now(),
-                atualizado_em: knex.fn.now()
+                data_atualizacao: knex.fn.now()
             });
 
             return res.json({
@@ -65,7 +65,7 @@ module.exports = {
         console.log(email, senha)
 
         try {
-            const user = await knex("ueb_sistem.users_sistem")
+            const user = await knex("ueb_sistem.users")
                 .where({ email })
                 .first();
 
@@ -82,9 +82,14 @@ module.exports = {
                     statusRequest: false
                 });
             }
+            console.log(user)
 
+            
+
+            console.log('check')
             // Verifica senha
-            const check = await bcrypt.compare(senha, user.senha);
+            const check = await bcrypt.compare(senha, user.password);
+            console.log(check)
 
             if (!check) {
                 return res.status(401).json({
@@ -92,7 +97,6 @@ module.exports = {
                     statusRequest: false
                 });
             }
-
             // Gera token JWT
             const token = jwt.sign(
                 { id: user.id, email: user.email, tipo: user.tipo },
@@ -101,13 +105,15 @@ module.exports = {
             );
 
             // Salva o token no banco
-            await knex("ueb_sistem.users_sistem")
+            await knex("ueb_sistem.users")
                 .where({ id: user.id })
                 .update({
-                    jwt_token: token,
+                   /*  jwt_token: token, */
                     ultimo_login: knex.fn.now(),
-                    atualizado_em: knex.fn.now()
+                    data_atualizacao: knex.fn.now()
                 });
+
+     
 
             return res.json({
                 message: "Login realizado com sucesso",
