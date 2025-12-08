@@ -1,11 +1,17 @@
 const knex = require('../database');
 const axios = require('axios');
 require('dotenv').config();
-
+  //Mudar todos os "ano" para "anoCarteirinha" porque ano sozinho pode ser confundido, embora no sistema ano é o criado
 module.exports = {
   async criarPedidoCarteirinha(req, res) {
     try {
       const { user_id, customerId, produto_id } = req.body;
+
+      const config = await knex("ueb_sistem.current_carteirinha") // Atualizado
+        .where({ id: 1 })
+        .first();
+
+      const anoAtual = config?.ano || 2025;
 
       // 🔹 Validações iniciais
       if (!user_id || isNaN(user_id)) {
@@ -21,8 +27,8 @@ module.exports = {
       }
 
       // 🔹 Verifica carteirinha do usuário
-      const carteirinha = await knex("ueb_sistem.carteirinha_user")
-        .where({ user_id })
+      const carteirinha = await knex("ueb_sistem.carteirinha_user")  // Atualizado
+        .where({ user_id, ano: anoAtual })
         .orderBy("id", "desc")
         .first();
 
@@ -30,24 +36,10 @@ module.exports = {
         return res.status(400).json({ sucesso: false, mensagem: "Usuário não possui carteirinha cadastrada." });
       }
 
-      // Determina o ano vigente
-      const hoje = new Date();
-      const anoAtual = hoje.getMonth() + 1 >= 4 ? hoje.getFullYear() : hoje.getFullYear() - 1;
-      const inicioAno = new Date(`${anoAtual}-04-01`);
-      const fimAno = new Date(`${anoAtual + 1}-03-31`);
-
-      const validadeCarteirinha = new Date(carteirinha.validade_fim);
-
-      if (validadeCarteirinha < inicioAno || validadeCarteirinha > fimAno) {
-        return res.status(400).json({
-          sucesso: false,
-          mensagem: `Carteirinha desatualizada. Atualize para o ano ${anoAtual}.`
-        });
-      }
 
       // 🔹 Verifica histórico de pagamento PENDENTE para o MESMO produto
       const pendente = await knex("ueb_sistem.pagamentos_historico")
-        .where({ user_id, produto_id, status: "pending" })
+        .where({ user_id, produto_id, status: "pending", ano: anoAtual })
         .first();
 
       if (pendente) {
@@ -110,9 +102,11 @@ module.exports = {
         user_id,
         produto_id,
         pagarme_order_id: pedido.id,
+        carteirinha_id: carteirinha.id,
         price: produto.preco,
         status: pedido.status || 'pending',
         forma_pagamento: 'pix',
+        ano: anoAtual, 
         qr_code: pedido.charges?.[0]?.last_transaction?.qr_code || null,
         qr_code_url: pedido.charges?.[0]?.last_transaction?.qr_code_url || null,
         data_criacao: knex.fn.now(),

@@ -293,19 +293,6 @@ module.exports = {
                 });
             }
 
-            // 1️⃣ Verificar pagamento
-            const pagamento = await knex("ueb_sistem.pagamentos_historico")
-                .where({ user_id })
-                .where("status", "paid")
-                .first();
-
-            if (!pagamento) {
-                return res.json({
-                    statusRequest: false,
-                    message: "Pagamento não identificado. Realize o pagamento para acessar sua carteirinha."
-                });
-            }
-
             // 2️⃣ Buscar dados do usuário
             const usuario = await knex("ueb_sistem.users")
                 .select("name", "data_nascimento", "cpf", "rg")
@@ -320,8 +307,9 @@ module.exports = {
             }
 
             // 4️⃣ Buscar dados da carteirinha
-            const carteirinha = await knex("ueb_sistem.carteirinha_user")
+            const carteirinha = await knex("ueb_sistem.carteirinha_user") // Atualizado
                 .select(
+                    "id",
                     "instituicao",
                     "curso",
                     "nivel_ensino",
@@ -342,6 +330,42 @@ module.exports = {
                 });
             }
 
+            console.log("ANO RECEBIDO:", carteirinha?.ano);
+            console.log(typeof carteirinha?.ano);
+
+            function isCarteirinhaValida(carteirinha) {
+                if (!carteirinha?.ano) return false;
+
+                const ano = Number(carteirinha.ano);
+                const hoje = new Date();
+
+                const inicio = new Date(ano, 3, 1);     // 01/04/Y
+                const fim = new Date(ano + 1, 2, 31);   // 31/03/(Y+1)
+
+                console.log({
+                    ano,
+                    inicio,
+                    fim,
+                    hoje,
+                    valido: hoje >= inicio && hoje <= fim
+                });
+
+                return hoje >= inicio && hoje <= fim;
+            }
+
+
+
+            if (isCarteirinhaValida(carteirinha)) {
+                console.log("Carteirinha válida");
+            } else {
+                console.log("Carteirinha vencida");
+                return res.json({
+                    statusRequest: false,
+                    message: "A carteirinha venceu! Faça sua renovação."
+                });
+            }
+            console.log(carteirinha)
+
             if (carteirinha?.approved == 0) {
                 return res.json({
                     statusRequest: false,
@@ -349,10 +373,10 @@ module.exports = {
                 });
             }
 
-               // 3️⃣ Buscar imagem da carteirinha
+            // 3️⃣ Buscar imagem da carteirinha
             const imagem = await knex("ueb_sistem.carteirinha_image")
                 .select("image")
-                .where("user_id", user_id)
+                .where({ user_id, id_carteirinha: carteirinha.id} )
                 .first();
 
             // 5️⃣ Retornar tudo junto
@@ -360,6 +384,7 @@ module.exports = {
                 statusRequest: true,
                 message: "Acesso liberado.",
                 carteirinha: {
+                    carteirinhaId: carteirinha.id,
                     codigoUso: carteirinha.cod_uso,
                     cpf: usuario.cpf,
                     dataNascimento: usuario.data_nascimento,
@@ -371,7 +396,7 @@ module.exports = {
                     imagem: imagem?.image || null,
                     email: usuario.email,
                     instituicao: carteirinha.instituicao,
-                    ano: carteirinha.ano, 
+                    ano: carteirinha.ano,
                 }
             });
 

@@ -51,7 +51,7 @@ routes.put("/update_modulos_user", ModulosUserController.update);
 routes.delete("/modulos_user/:id", ModulosUserController.delete);
 
 /* ProdutosController */
-routes.get("/produtos", ProdutosController.index);
+routes.get("/produtos", ProdutosController.index); // não uso ainda
 routes.post("/verificarcarteirinha", ProdutosController.verificarCarteirinha);
 routes.post("/cadastrarcarteirinha", ProdutosController.cadastrarCarteirinha);
 routes.post("/listarprodutosfaltantes", ProdutosController.listarProdutosFaltantes);
@@ -60,7 +60,7 @@ routes.post("/listarprodutosfaltantes", ProdutosController.listarProdutosFaltant
 /* Pagamentos */
 /* routes.post("/verificarhistoricocarteirinha", HistoricoPagamentosController.verificarCarteirinha); */
 routes.post("/registrarCarteirinha", HistoricoPagamentosController.registrarOuAtualizar);
-routes.post("/listarTransacoes", HistoricoPagamentosController.listarTransacoes);
+routes.post("/listarTransacoes", HistoricoPagamentosController.listarTransacoes); // não uso ainda
 routes.post("/atualizartransacaoexpirada", HistoricoPagamentosController.atualizarTransacaoExpirada);
 routes.post("/verificarpermissaocarteirinha", HistoricoPagamentosController.verificarPermissaoCarteirinha);
 

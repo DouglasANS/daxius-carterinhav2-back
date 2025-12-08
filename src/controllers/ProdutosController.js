@@ -17,40 +17,40 @@ module.exports = {
 
     async verificarCarteirinha(req, res) {
         try {
-            const { user_id, ano } = req.body;
+            const { user_id } = req.body;
 
-            if (!user_id || !ano) {
+            // Buscar o ano atual da configuração
+            const config = await knex("ueb_sistem.current_carteirinha")  
+                .where({ id: 1 })
+                .first();
+
+            const anoAtual = config?.ano || 2025;
+
+            if (!user_id || !anoAtual) {
                 return res.status(400).json({
                     error: "envie user_id e ano"
                 });
             }
 
-            // Buscar carteirinha do usuário
-            const carteira = await knex('ueb_sistem.carteirinha_user')
-                .where({ user_id })
-                .orderBy('id', 'desc') // pega a mais recente
+            // Buscar carteirinha ESPECÍFICA do ano atual (e naturalmente a mais recente dele)
+            const carteiraAnoAtual = await knex("ueb_sistem.carteirinha_user") // Atualizado
+                .where({ user_id, ano: anoAtual })
+                .orderBy("id", "desc")
                 .first();
 
-            // 1️⃣ Se não existir
-            if (!carteira) {
+            // 1️⃣ Nenhuma carteirinha para o ano atual
+            if (!carteiraAnoAtual) {
                 return res.json({
                     statusRequest: false,
-                    message: "Nenhuma carteirinha encontrada. Atualize seus dados."
+                    message: `Nenhuma carteirinha encontrada para o ano ${anoAtual}. Atualize seus dados.`
                 });
             }
 
-            // 2️⃣ Se existir, mas o ano é diferente
-            if (carteira.ano !== ano) {
-                return res.json({
-                    statusRequest: false,
-                    message: `Você já tem uma carteirinha registrada para o ano ${carteira.ano}. Atualize os dados para o ano ${ano}.`
-                });
-            }
-
-            // 3️⃣ Tudo certo
+            // 2️⃣ Existe carteirinha válida do ano atual
             return res.json({
                 statusRequest: true,
-                message: "Tudo certo para continuar."
+                message: "Tudo certo para continuar.",
+                data: carteiraAnoAtual
             });
 
         } catch (error) {
@@ -59,7 +59,9 @@ module.exports = {
                 error: "Erro ao verificar carteirinha"
             });
         }
-    },
+    }
+    ,
+
     async cadastrarCarteirinha(req, res) {
         try {
             const {
@@ -67,8 +69,7 @@ module.exports = {
                 instituicao,
                 curso,
                 nivel_ensino,
-                criadoPor_id,
-                ano,
+                criadoPor_id, 
                 cod_identificador = '7A137F5',
                 tipo_carteira,
                 image, // <- imagem base64 ou URL enviada pelo front
@@ -91,7 +92,7 @@ module.exports = {
                 while (existe) {
                     codigo = gerarTextoAleatorio();
 
-                    const encontrado = await knex("ueb_sistem.carteirinha_user")
+                    const encontrado = await knex("ueb_sistem.carteirinha_user") // Atualizado
                         .where("cod_uso", codigo)
                         .first();
 
@@ -102,26 +103,32 @@ module.exports = {
             }
 
             // 1️⃣ Verificação dos campos obrigatórios
-            if (!user_id || !instituicao || !nivel_ensino || !ano) {
+            if (!user_id || !instituicao || !nivel_ensino) {
                 return res.status(400).json({
-                    error: "Campos obrigatórios: user_id, instituicao, nivel_ensino, ano"
+                    error: "Campos obrigatórios: user_id, instituicao, nivel_ensino"
                 });
             }
 
+             const config = await knex("ueb_sistem.current_carteirinha") // Atualizado
+                .where({ id: 1 })
+                .first();
+
+            const anoAtual = config?.ano || 2025;
+
             // 2️⃣ Verificar se já existe carteirinha para esse user no ano
-            const carteiraExistente = await knex('ueb_sistem.carteirinha_user')
-                .where({ user_id, ano })
+            const carteiraExistente = await knex('ueb_sistem.carteirinha_user') // Atualizado
+                .where({ user_id, ano: anoAtual })
                 .first();
 
             if (carteiraExistente) {
                 return res.json({
                     statusRequest: false,
-                    message: `Já existe uma carteirinha cadastrada para o ano ${ano}.`
+                    message: `Já existe uma carteirinha cadastrada para o ano ${anoAtual}.`
                 });
             }
 
             // 3️⃣ Calcular validade automaticamente
-            const validade = `${Number(ano) + 1}-03-31`;
+            const validade = `${Number(anoAtual) + 1}-03-31`;
 
             // 4️⃣ Preparar dados para inserir
             const novaCarteirinha = {
@@ -134,19 +141,20 @@ module.exports = {
                 cod_identificador: cod_identificador || null,
                 tipo_carteira: tipo_carteira || null,
                 criadoPor_id: criadoPor_id || null,
-                ano,
+                ano: anoAtual,
                 status: null,
                 editavel: 1
             };
 
             // 5️⃣ Inserir a carteirinha
-            const [idCriado] = await knex('ueb_sistem.carteirinha_user')
+            const [idCriado] = await knex('ueb_sistem.carteirinha_user') // Atualizado
                 .insert(novaCarteirinha);
 
             // 6️⃣ Inserir a imagem na tabela "carteirinha_image"
             if (image) {
                 await knex("ueb_sistem.carteirinha_image").insert({
                     user_id: user_id,
+                    id_carteirinha: idCriado,
                     image: image, // base64, blob ou URL — do jeito que vier do front
                 });
             }
@@ -173,17 +181,20 @@ module.exports = {
             const { user_id } = req.body;
 
             // 0. Buscar ano atual da carteira
-            const config = await knex("ueb_sistem.current_carteirinha")
+            const config = await knex("ueb_sistem.current_carteirinha") // Atualizado
                 .where({ id: 1 })
                 .first();
 
             const anoAtual = config?.ano || 2025;
 
+            console.log(anoAtual)
+            
             // 2. Buscar produtos ativos do ano ATUAL
             const produtos = await knex("ueb_sistem.produtos")
-                .where({ tipo: "carteirinha", ativo: 1, ano: anoAtual })
-                .select("*");
-
+            .where({ tipo: "carteirinha", ativo: 1, ano: anoAtual })
+            .select("*");
+            
+            console.log(produtos)
             // 3. Buscar todos os históricos do usuário para o ANO ATUAL
             const historicos = await knex("ueb_sistem.pagamentos_historico as h")
                 .leftJoin("ueb_sistem.produtos as p", "h.produto_id", "p.id")
@@ -263,7 +274,7 @@ module.exports = {
                 });
             }
 
-
+            console.log('produtosComStatus', produtosComStatus)
 
             // --------------------------------------------------------
             // 5. 🔥 NOVA REGRA PRINCIPAL: esconder os produtos maiores
