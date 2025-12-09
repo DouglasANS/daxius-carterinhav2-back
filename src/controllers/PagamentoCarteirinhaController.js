@@ -1,7 +1,7 @@
 const knex = require('../database');
 const axios = require('axios');
 require('dotenv').config();
-  //Mudar todos os "ano" para "anoCarteirinha" porque ano sozinho pode ser confundido, embora no sistema ano é o criado
+//Mudar todos os "ano" para "anoCarteirinha" porque ano sozinho pode ser confundido, embora no sistema ano é o criado
 module.exports = {
   async criarPedidoCarteirinha(req, res) {
     try {
@@ -106,7 +106,7 @@ module.exports = {
         price: produto.preco,
         status: pedido.status || 'pending',
         forma_pagamento: 'pix',
-        ano: anoAtual, 
+        ano: anoAtual,
         qr_code: pedido.charges?.[0]?.last_transaction?.qr_code || null,
         qr_code_url: pedido.charges?.[0]?.last_transaction?.qr_code_url || null,
         data_criacao: knex.fn.now(),
@@ -130,6 +130,39 @@ module.exports = {
         detalhes: error.response?.data || error.message
       });
     }
+  },
+  async listarCarteirinhasPendentes(req, res) {
+    try {
+      const resultados = await knex("ueb_sistem.carteirinha_user as c")
+        .join("ueb_sistem.users as u", "u.id", "c.user_id")
+        .select(
+          "c.id as carteirinha_id",
+          "c.user_id",
+          "c.instituicao",
+          "c.curso",
+          "c.nivel_ensino",
+          "c.validade",
+          "c.cod_identificador",
+          "c.cod_uso",
+          "c.ano",
+          "c.approved",
+          "c.status",
+          "u.name",
+          "u.email",
+          "u.cpf",
+          "u.rg"
+        )
+        .where("c.approved", 0)
+        .where("c.status", "paid")
+        .orderBy("c.ano", "desc");
+
+      return res.status(200).json(resultados);
+
+    } catch (error) {
+      console.error("Erro ao listar carteirinhas pendentes:", error);
+      return res.status(500).json({ error: "Erro ao listar carteirinhas pendentes" });
+    }
   }
+
 
 };

@@ -14,6 +14,7 @@ const PagamentoCarteirinhaController = require('./src/controllers/PagamentoCarte
 const HistoricoPagamentosController = require('./src/controllers/HistoricoPagamentosController');
 const ProdutosController = require('./src/controllers/ProdutosController');
 const WebhookPagarmeController = require('./src/controllers/WebhookPagarmeController');
+const ImageController = require('./src/controllers/ImageController');
 const authMiddleware = require('./src/middlewares/authMiddleware');
 const hasRole = require('./src/middlewares/hasRole');
 
@@ -55,6 +56,8 @@ routes.get("/produtos", ProdutosController.index); // não uso ainda
 routes.post("/verificarcarteirinha", ProdutosController.verificarCarteirinha);
 routes.post("/cadastrarcarteirinha", ProdutosController.cadastrarCarteirinha);
 routes.post("/listarprodutosfaltantes", ProdutosController.listarProdutosFaltantes);
+routes.post("/aprovarcarteirinha", ProdutosController.aprovarCarteirinha);
+routes.post("/createendereco", ProdutosController.createEndereco);
 
 
 /* Pagamentos */
@@ -63,6 +66,10 @@ routes.post("/registrarCarteirinha", HistoricoPagamentosController.registrarOuAt
 routes.post("/listarTransacoes", HistoricoPagamentosController.listarTransacoes); // não uso ainda
 routes.post("/atualizartransacaoexpirada", HistoricoPagamentosController.atualizarTransacaoExpirada);
 routes.post("/verificarpermissaocarteirinha", HistoricoPagamentosController.verificarPermissaoCarteirinha);
+
+
+routes.post("/getcarteirinhaimagem", ImageController.getCarteirinhaImagem);
+
 
 
 
@@ -75,6 +82,7 @@ routes.post("/listarclientbyid", PagamentoController.listarClientById);
 
 
 routes.post("/criarpedidocarteirinha", PagamentoCarteirinhaController.criarPedidoCarteirinha);
+routes.post("/listarcarteirinhaspendentes", PagamentoCarteirinhaController.listarCarteirinhasPendentes);
 
 
 routes.post("/pagarmeWebhookStatusPix", WebhookPagarmeController.pagarmeWebhookStatusPix);

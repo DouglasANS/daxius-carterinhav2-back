@@ -339,19 +339,15 @@ module.exports = {
                 const ano = Number(carteirinha.ano);
                 const hoje = new Date();
 
-                const inicio = new Date(ano, 3, 1);     // 01/04/Y
-                const fim = new Date(ano + 1, 2, 31);   // 31/03/(Y+1)
+                // Nova regra: 01/01/ano até 31/03/(ano + 1)
+                const inicio = new Date(ano, 0, 1);      // 01/01/ano
+                const fim = new Date(ano + 1, 2, 31);    // 31/03/(ano + 1)
 
-                console.log({
-                    ano,
-                    inicio,
-                    fim,
-                    hoje,
-                    valido: hoje >= inicio && hoje <= fim
-                });
-
-                return hoje >= inicio && hoje <= fim;
+                const valido = hoje >= inicio && hoje <= fim;
+ 
+                return valido;
             }
+
 
 
 
@@ -376,7 +372,7 @@ module.exports = {
             // 3️⃣ Buscar imagem da carteirinha
             const imagem = await knex("ueb_sistem.carteirinha_image")
                 .select("image")
-                .where({ user_id, id_carteirinha: carteirinha.id} )
+                .where({ user_id, carteirinha_id: carteirinha.id })
                 .first();
 
             // 5️⃣ Retornar tudo junto
