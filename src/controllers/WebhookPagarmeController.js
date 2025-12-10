@@ -48,7 +48,7 @@ module.exports = {
           if (status === 'paid') {
             await knex("ueb_sistem.carteirinha_user") // Atualizado
               .where({ id: carteirinha.id })  // ✅ aqui usamos o id
-              .update({ status: 'paid', data_atualizacao: knex.fn.now() });
+              .update({ status: 'paid', data_atualizacao: knex.fn.now(), approved: 1 });
 
             console.log('6 - carteirinha atualizada para concluido');
           }

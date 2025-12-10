@@ -344,7 +344,7 @@ module.exports = {
                 const fim = new Date(ano + 1, 2, 31);    // 31/03/(ano + 1)
 
                 const valido = hoje >= inicio && hoje <= fim;
- 
+
                 return valido;
             }
 
@@ -403,7 +403,73 @@ module.exports = {
                 message: "Erro ao verificar permissão da carteirinha."
             });
         }
+    },
+
+    async listarHistoricoPagamentos(req, res) {
+        try {
+            const { user_id } = req.body;
+
+            if (!user_id) {
+                return res.status(400).json({
+                    error: "O campo user_id é obrigatório."
+                });
+            }
+
+            // 1️⃣ Busca os pagamentos
+            const historico = await knex("ueb_sistem.pagamentos_historico")
+                .where({ user_id })
+                .orderBy("id", "desc");
+
+            // 2️⃣ Monta lista com dados do produto
+            const historicoComProduto = await Promise.all(
+                historico.map(async (item) => {
+                    let produto = null;
+
+                    if (item.produto_id) {
+                        produto = await knex("ueb_sistem.produtos")
+                            .where({ id: item.produto_id })
+                            .first();
+                    }
+
+                    return {
+                        ...item,
+                        produto: produto
+                            ? {
+                                id: produto.id,
+                                nome: produto.nome,
+                                descricao: produto.descricao,
+                                preco: produto.preco,
+                                tipo: produto.tipo,
+                                layout: produto.layout,
+                                ano: produto.ano,
+                                fisica: produto.fisica,
+                                digital: produto.digital,
+                                frete: produto.frete
+                            }
+                            : {
+                                id: null,
+                                nome: "Produto não encontrado",
+                                descricao: null,
+                                preco: null,
+                                tipo: null
+                            }
+                    };
+                })
+            );
+
+            return res.status(200).json({
+                total: historicoComProduto.length,
+                historico: historicoComProduto
+            });
+
+        } catch (error) {
+            console.error("Erro ao listar histórico de pagamentos:", error);
+            return res.status(500).json({
+                error: "Erro interno ao buscar histórico de pagamentos."
+            });
+        }
     }
+
 
 
 };

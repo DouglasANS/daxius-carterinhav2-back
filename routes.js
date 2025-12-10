@@ -66,6 +66,7 @@ routes.post("/registrarCarteirinha", HistoricoPagamentosController.registrarOuAt
 routes.post("/listarTransacoes", HistoricoPagamentosController.listarTransacoes); // não uso ainda
 routes.post("/atualizartransacaoexpirada", HistoricoPagamentosController.atualizarTransacaoExpirada);
 routes.post("/verificarpermissaocarteirinha", HistoricoPagamentosController.verificarPermissaoCarteirinha);
+routes.post("/listarhistoricopagamentos", HistoricoPagamentosController.listarHistoricoPagamentos);
 
 
 routes.post("/getcarteirinhaimagem", ImageController.getCarteirinhaImagem);
