@@ -11,8 +11,8 @@ module.exports = {
         const criadoPor_id = req.user.id;
         const ip = req.user.ip;
         const userAgent = req.user.userAgent;
- 
- 
+
+
 
         const {
             name,
@@ -108,57 +108,61 @@ module.exports = {
             });
 
             // 4️⃣ Cria cliente no Pagar.me
-           /*  try {
-                const apiKey = process.env.PAGARME_API_KEY;
-                const token = Buffer.from(apiKey + ':').toString('base64');
-
-                const customerData = {
-                    external_id: `cli_${userId}_${Date.now()}`,
-                    name: name || 'Cliente Padrão',
-                    type: 'individual',
-                    country: 'br',
-                    email: email || 'sememail@teste.com',
-                    document: cpf,
-                    document_type: 'CPF',
-                    phones: phone
-                        ? {
-                            home_phone: {
-                                country_code: phone.country_code,
-                                area_code: phone.area_code,
-                                number: phone.number
-                            }
-                        }
-                        : undefined
-                };
-
-                const response = await axios.post(
-                    'https://api.pagar.me/core/v5/customers',
-                    customerData,
-                    {
-                        headers: {
-                            Accept: 'application/json',
-                            'Content-Type': 'application/json',
-                            Authorization: `Basic ${token}`
-                        }
-                    }
-                );
-
-                // Atualiza usuário com o ID do cliente Pagar.me
-                await trx("ueb_sistem.users")
-                    .where({ id: userId })
-                    .update({ pagarme_customer_id: response.data.id });
-
-                console.log("Cliente criado no Pagar.me:", response.data.id);
-
-            } catch (pagarmeError) {
-                console.error("Erro ao criar cliente no Pagar.me:", pagarmeError.response?.data || pagarmeError.message);
-                // Continua execução mesmo que falhe no Pagar.me
-            } */
+            /*  try {
+                 const apiKey = process.env.PAGARME_API_KEY;
+                 const token = Buffer.from(apiKey + ':').toString('base64');
+ 
+                 const customerData = {
+                     external_id: `cli_${userId}_${Date.now()}`,
+                     name: name || 'Cliente Padrão',
+                     type: 'individual',
+                     country: 'br',
+                     email: email || 'sememail@teste.com',
+                     document: cpf,
+                     document_type: 'CPF',
+                     phones: phone
+                         ? {
+                             home_phone: {
+                                 country_code: phone.country_code,
+                                 area_code: phone.area_code,
+                                 number: phone.number
+                             }
+                         }
+                         : undefined
+                 };
+ 
+                 const response = await axios.post(
+                     'https://api.pagar.me/core/v5/customers',
+                     customerData,
+                     {
+                         headers: {
+                             Accept: 'application/json',
+                             'Content-Type': 'application/json',
+                             Authorization: `Basic ${token}`
+                         }
+                     }
+                 );
+ 
+                 // Atualiza usuário com o ID do cliente Pagar.me
+                 await trx("ueb_sistem.users")
+                     .where({ id: userId })
+                     .update({ pagarme_customer_id: response.data.id });
+ 
+                 console.log("Cliente criado no Pagar.me:", response.data.id);
+ 
+             } catch (pagarmeError) {
+                 console.error("Erro ao criar cliente no Pagar.me:", pagarmeError.response?.data || pagarmeError.message);
+                 // Continua execução mesmo que falhe no Pagar.me
+             } */
 
             // Busca produto
             const produto = await trx("ueb_sistem.produtos")
                 .where({ id: produto_id, ativo: true })
-                .first(); 
+                .first();
+
+            var codUso = await gerarCodUsoUnico()
+
+            console.log(codUso)
 
             // 5️⃣ Cria carteirinha vinculada
             const [carteirinhaId] = await trx("ueb_sistem.carteirinha_user").insert({
@@ -168,16 +172,23 @@ module.exports = {
                 nivel_ensino,
                 validade: validadeGerada,
                 tipo_carteira,
-                cod_uso: await gerarCodUsoUnico(),
+                cod_uso: codUso,
                 cod_identificador: cod_identificador || null,
                 criadoPor_id,
                 data_criacao: knex.fn.now(),
+                ano: anoAtual,
+                status: 'paid',
 
                 fisica: produto?.fisica,
                 digital: produto?.digital,
                 frete: produto?.frete,
                 approved: 1,
             });
+
+            function base64ToSize(base64String) {
+                const padding = (base64String.endsWith("==") ? 2 : base64String.endsWith("=") ? 1 : 0);
+                return (base64String.length * 3) / 4 - padding;
+            }
 
 
             // 6️⃣ Salva imagem Base64 (caso enviada)
@@ -186,6 +197,8 @@ module.exports = {
                     user_id: userId,
                     image: image_base64,
                     data_criacao: knex.fn.now(),
+                    carteirinha_id: carteirinhaId,
+                    size: image_base64 ? base64ToSize(image_base64) : undefined,
                 });
             }
 
@@ -226,8 +239,9 @@ module.exports = {
 
 
             return res.status(201).json({
-                message: "Usuário, carteirinha, imagem, pagamento, métricas e cliente Pagar.me criados com sucesso.",
+                message: "Usuário, carteirinha, imagem, pagamento, métricas criados com sucesso.",
                 statusRequest: true,
+                cpf
             });
 
         } catch (error) {

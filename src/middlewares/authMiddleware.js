@@ -31,6 +31,6 @@ module.exports = (req, res, next) => {
     return next();
   } catch (err) {
     console.error('Erro ao validar token:', err);
-    return res.status(401).json({ error: 'Token inválido' });
+    return res.status(200).json({ error: 'Token inválido' });
   }
 };

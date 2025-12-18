@@ -384,7 +384,7 @@ module.exports = {
                     codigoUso: carteirinha.cod_uso,
                     cpf: usuario.cpf,
                     dataNascimento: usuario.data_nascimento,
-                    escolaridade: usuario.escolaridade || null,
+                    escolaridade: carteirinha.nivel_ensino || null,
                     nome: usuario.name,
                     curso: carteirinha.curso,
                     rg: usuario.rg || null,
