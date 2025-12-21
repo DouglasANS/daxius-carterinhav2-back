@@ -14,6 +14,7 @@ const PagamentoCarteirinhaController = require('./src/controllers/PagamentoCarte
 const HistoricoPagamentosController = require('./src/controllers/HistoricoPagamentosController');
 const userController = require('./src/controllers/userController');
 const CarteirinhasController = require('./src/controllers/carteirinhasController');
+const FuncionariosController = require('./src/controllers/FuncionariosController');
 const ProdutosController = require('./src/controllers/ProdutosController');
 const WebhookPagarmeController = require('./src/controllers/WebhookPagarmeController');
 const ImageController = require('./src/controllers/ImageController');
@@ -35,7 +36,14 @@ routes.post('/login', authController.login);
 routes.post('/pagarmeuserid', authController.pagarMeUserID);
 
 
-routes.post('/listarcarteirinhaspaginado', CarteirinhasController.listarCarteirinhasPaginado);
+routes.post('/listarcarteirinhasbatch', CarteirinhasController.listarCarteirinhasBatch);
+
+
+
+routes.post('/criarfuncionario', FuncionariosController.criarFuncionario);
+routes.post('/listarfuncionarios', FuncionariosController.listarFuncionarios);
+routes.post('/atualizarfuncionario', FuncionariosController.atualizarFuncionario);
+routes.post('/desativarfuncionario', FuncionariosController.desativarFuncionario);
 
 /* MÉTRICAS */
 routes.post('/metricaslogin', MetricasController.index);

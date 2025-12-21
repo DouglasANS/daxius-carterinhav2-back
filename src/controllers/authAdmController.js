@@ -119,9 +119,9 @@ module.exports = {
                 message: "Login realizado com sucesso",
                 user: {
                     id: user.id,
-                    nome: user.nome,
+                    name: user.name,
                     email: user.email,
-                    tipo: user.tipo
+                    tipo: user.role
                 },
                 token,
                 statusRequest: true
