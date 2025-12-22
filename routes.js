@@ -46,7 +46,14 @@ routes.post('/atualizarfuncionario', FuncionariosController.atualizarFuncionario
 routes.post('/desativarfuncionario', FuncionariosController.desativarFuncionario);
 
 /* MÉTRICAS */
-routes.post('/metricaslogin', MetricasController.index);
+routes.post('/registrospormes', MetricasController.registrosPorMes);
+routes.post('/registrosporfuncionario', MetricasController.registrosPorFuncionario);
+routes.post('/registrosporano', MetricasController.registrosPorAno);
+routes.post('/registrospordiafuncionario', MetricasController.registrosPorDiaFuncionario);
+
+
+
+
 routes.post('/getuserbycoduso', userController.getUserByCodUso);
 routes.post('/getuserbycpf', userController.getUserByCpf);
 routes.post('/editarusuariobycpfcodUso', userController.editarUsuarioByCpfCodUso);
