@@ -32,11 +32,12 @@ module.exports = {
         .update({ status: status, data_atualizacao: knex.fn.now() });
 
       console.log('4 - pagamentos atualizado');
+ 
 
       // 🔹 Atualiza status da carteirinha (somente pending ou expirado)
       for (const pagamento of pagamentos) {
-        const carteirinha = await knex("ueb_sistem.carteirinha_user")
-          .where({ user_id: pagamento.user_id })
+        const carteirinha = await knex("ueb_sistem.carteirinha_user")  // Atualizado
+          .where({ user_id: pagamento.user_id, ano: pagamento.ano })
           .orderBy("id", "desc")
           .first();
 
@@ -45,9 +46,9 @@ module.exports = {
         if (carteirinha && (carteirinha.status === 'pending' || carteirinha.status === 'expirado' || carteirinha.status === null)) {
           // Atualiza somente a carteirinha específica
           if (status === 'paid') {
-            await knex("ueb_sistem.carteirinha_user")
+            await knex("ueb_sistem.carteirinha_user") // Atualizado
               .where({ id: carteirinha.id })  // ✅ aqui usamos o id
-              .update({ status: 'paid', data_atualizacao: knex.fn.now() });
+              .update({ status: 'paid', data_atualizacao: knex.fn.now(), approved: 1 });
 
             console.log('6 - carteirinha atualizada para concluido');
           }

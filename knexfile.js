@@ -7,7 +7,7 @@ module.exports = {
     connection: {
       database: "ccicontrole",
       user: "root",
-      password: "123456",
+      password: "123456", 
       typeCast: function (field, next) {
         if (field.type === 'DATE') {
           return field.string(); // ← retorna como string "2025-07-07"

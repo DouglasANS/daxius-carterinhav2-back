@@ -223,6 +223,12 @@ module.exports = {
                     "ph.id",
                     "ph.user_id",
                     "ph.produto_id",
+                    "ph.pagarme_order_id",
+                    "ph.qr_code",
+                    "ph.qr_code_url",
+                    "ph.created_at_pagarme",
+                    "ph.expires_at_pagarme",
+                    "ph.updated_at_pagarme",
                     "p.nome as produto_nome",
                     "p.preco as produto_preco",
                     "ph.price",
@@ -239,6 +245,8 @@ module.exports = {
                 .where("ph.user_id", user_id)
                 .orderBy("ph.data_criacao", "desc");
 
+            console.log('transacoes====', transacoes)
+
             return res.json({
                 sucesso: true,
                 transacoes
@@ -251,5 +259,217 @@ module.exports = {
                 mensagem: "Erro ao buscar transações do usuário."
             });
         }
+    },
+    async atualizarTransacaoExpirada(req, res) {
+        try {
+            const { id } = req.body; // id da pagamentos_historico
+
+            const result = await knex('ueb_sistem.pagamentos_historico')
+                .where('id', id)
+                .update({
+                    status: "expired",
+                    data_atualizacao: knex.fn.now()
+                });
+
+            return res.json({ ok: true, updated: result });
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({
+                error: 'Erro ao atualizar status da transação para expired'
+            });
+        }
     }
+
+    ,
+    async verificarPermissaoCarteirinha(req, res) {
+        try {
+
+            const { user_id } = req.body;
+
+            if (!user_id) {
+                return res.status(400).json({
+                    statusRequest: false,
+                    message: "Envie o user_id."
+                });
+            }
+
+            // 2️⃣ Buscar dados do usuário
+            const usuario = await knex("ueb_sistem.users")
+                .select("name", "data_nascimento", "cpf", "rg")
+                .where("id", user_id)
+                .first();
+
+            if (!usuario) {
+                return res.json({
+                    statusRequest: false,
+                    message: "Usuário não encontrado."
+                });
+            }
+
+            // 4️⃣ Buscar dados da carteirinha
+            const carteirinha = await knex("ueb_sistem.carteirinha_user") // Atualizado
+                .select(
+                    "id",
+                    "instituicao",
+                    "curso",
+                    "nivel_ensino",
+                    "validade",
+                    "cod_identificador",
+                    "cod_uso",
+                    "ano",
+                    "approved",
+                )
+                .where("user_id", user_id)
+                .orderBy("ano", "desc")
+                .first(); // pega a mais recente
+
+            if (!carteirinha) {
+                return res.json({
+                    statusRequest: false,
+                    message: "Nenhuma carteirinha cadastrada para esse usuário."
+                });
+            }
+
+            console.log("ANO RECEBIDO:", carteirinha?.ano);
+            console.log(typeof carteirinha?.ano);
+
+            function isCarteirinhaValida(carteirinha) {
+                if (!carteirinha?.ano) return false;
+
+                const ano = Number(carteirinha.ano);
+                const hoje = new Date();
+
+                // Nova regra: 01/01/ano até 31/03/(ano + 1)
+                const inicio = new Date(ano, 0, 1);      // 01/01/ano
+                const fim = new Date(ano + 1, 2, 31);    // 31/03/(ano + 1)
+
+                const valido = hoje >= inicio && hoje <= fim;
+
+                return valido;
+            }
+
+
+
+
+            if (isCarteirinhaValida(carteirinha)) {
+                console.log("Carteirinha válida");
+            } else {
+                console.log("Carteirinha vencida");
+                return res.json({
+                    statusRequest: false,
+                    message: "A carteirinha venceu! Faça sua renovação."
+                });
+            }
+            console.log(carteirinha)
+
+            if (carteirinha?.approved == 0) {
+                return res.json({
+                    statusRequest: false,
+                    message: "Verificação de carteirinha pendente!"
+                });
+            }
+
+            // 3️⃣ Buscar imagem da carteirinha
+            const imagem = await knex("ueb_sistem.carteirinha_image")
+                .select("image")
+                .where({ user_id, carteirinha_id: carteirinha.id })
+                .first();
+
+            // 5️⃣ Retornar tudo junto
+            return res.json({
+                statusRequest: true,
+                message: "Acesso liberado.",
+                carteirinha: {
+                    carteirinhaId: carteirinha.id,
+                    codigoUso: carteirinha.cod_uso,
+                    cpf: usuario.cpf,
+                    dataNascimento: usuario.data_nascimento,
+                    escolaridade: carteirinha.nivel_ensino || null,
+                    nome: usuario.name,
+                    curso: carteirinha.curso,
+                    rg: usuario.rg || null,
+                    validadeCarteirinha: carteirinha.validade,
+                    imagem: imagem?.image || null,
+                    email: usuario.email,
+                    instituicao: carteirinha.instituicao,
+                    ano: carteirinha.ano,
+                }
+            });
+
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({
+                statusRequest: false,
+                message: "Erro ao verificar permissão da carteirinha."
+            });
+        }
+    },
+
+    async listarHistoricoPagamentos(req, res) {
+        try {
+            const { user_id } = req.body;
+
+            if (!user_id) {
+                return res.status(400).json({
+                    error: "O campo user_id é obrigatório."
+                });
+            }
+
+            // 1️⃣ Busca os pagamentos
+            const historico = await knex("ueb_sistem.pagamentos_historico")
+                .where({ user_id })
+                .orderBy("id", "desc");
+
+            // 2️⃣ Monta lista com dados do produto
+            const historicoComProduto = await Promise.all(
+                historico.map(async (item) => {
+                    let produto = null;
+
+                    if (item.produto_id) {
+                        produto = await knex("ueb_sistem.produtos")
+                            .where({ id: item.produto_id })
+                            .first();
+                    }
+
+                    return {
+                        ...item,
+                        produto: produto
+                            ? {
+                                id: produto.id,
+                                nome: produto.nome,
+                                descricao: produto.descricao,
+                                preco: produto.preco,
+                                tipo: produto.tipo,
+                                layout: produto.layout,
+                                ano: produto.ano,
+                                fisica: produto.fisica,
+                                digital: produto.digital,
+                                frete: produto.frete
+                            }
+                            : {
+                                id: null,
+                                nome: "Produto não encontrado",
+                                descricao: null,
+                                preco: null,
+                                tipo: null
+                            }
+                    };
+                })
+            );
+
+            return res.status(200).json({
+                total: historicoComProduto.length,
+                historico: historicoComProduto
+            });
+
+        } catch (error) {
+            console.error("Erro ao listar histórico de pagamentos:", error);
+            return res.status(500).json({
+                error: "Erro interno ao buscar histórico de pagamentos."
+            });
+        }
+    }
+
+
+
 };
