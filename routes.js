@@ -56,6 +56,7 @@ routes.post('/registrospordiafuncionario', MetricasController.registrosPorDiaFun
 
 routes.post('/getuserbycoduso', userController.getUserByCodUso);
 routes.post('/getuserbycpf', userController.getUserByCpf);
+routes.post('/getallcarteirinhasbycpf', userController.getAllCarteirinhasByCpf);
 routes.post('/editarusuariobycpfcodUso', userController.editarUsuarioByCpfCodUso);
 
 /* ModulosController */

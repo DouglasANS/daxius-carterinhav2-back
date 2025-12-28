@@ -246,7 +246,7 @@ module.exports = {
                 dataNascimento,
                 instituicao,
                 curso,
-                escolaridade, 
+                escolaridade,
                 cod_identificador,
                 imagemBase64
             } = req.body;
@@ -303,7 +303,7 @@ module.exports = {
                 .update({
                     instituicao: instituicao ?? carteirinha.instituicao,
                     curso: curso ?? carteirinha.curso,
-                    nivel_ensino: escolaridade ?? carteirinha.nivel_ensino, 
+                    nivel_ensino: escolaridade ?? carteirinha.nivel_ensino,
                     cod_identificador: cod_identificador ?? carteirinha.cod_identificador
                 });
 
@@ -350,7 +350,108 @@ module.exports = {
         }
     },
 
-    
+    async getAllCarteirinhasByCpf(req, res) {
+        try {
+            const { cpf } = req.body;
+
+            if (!cpf) {
+                return res.status(400).json({
+                    statusRequest: false,
+                    message: "Envie o CPF."
+                });
+            }
+
+            // 1️⃣ Buscar usuário
+            const usuario = await knex("ueb_sistem.users")
+                .select("id", "name", "data_nascimento", "cpf", "rg", "email")
+                .where("cpf", cpf)
+                .first();
+
+            if (!usuario) {
+                return res.json({
+                    statusRequest: false,
+                    message: "Usuário não encontrado."
+                });
+            }
+
+            // 2️⃣ Buscar TODAS as carteirinhas
+            const carteirinhas = await knex("ueb_sistem.carteirinha_user as c")
+                .select(
+                    "c.id",
+                    "c.user_id",
+                    "c.instituicao",
+                    "c.curso",
+                    "c.nivel_ensino",
+                    "c.validade",
+                    "c.cod_identificador",
+                    "c.cod_uso",
+                    "c.ano",
+                    "c.approved",
+                    "i.image"
+                )
+                .leftJoin(
+                    "ueb_sistem.carteirinha_image as i",
+                    function () {
+                        this.on("i.carteirinha_id", "c.id")
+                            .andOn("i.user_id", "c.user_id");
+                    }
+                )
+                .where("c.user_id", usuario.id)
+                .orderBy("c.ano", "desc");
+
+            if (!carteirinhas.length) {
+                return res.json({
+                    statusRequest: false,
+                    message: "Nenhuma carteirinha encontrada."
+                });
+            }
+
+            // 3️⃣ Agrupar por ANO
+            const carteirinhasPorAno = {};
+
+            for (const c of carteirinhas) {
+                if (!carteirinhasPorAno[c.ano]) {
+                    carteirinhasPorAno[c.ano] = [];
+                }
+
+                carteirinhasPorAno[c.ano].push({
+                    carteirinhaId: c.id,
+                    codigoUso: c.cod_uso,
+                    instituicao: c.instituicao,
+                    curso: c.curso,
+                    escolaridade: c.nivel_ensino || null,
+                    validadeCarteirinha: c.validade,
+                    ano: c.ano,
+                    approved: c.approved,
+                    imagem: c.image || null
+                });
+            }
+
+            // 4️⃣ Retorno final
+            return res.json({
+                statusRequest: true,
+                message: "Carteirinhas encontradas.",
+                usuario: {
+                    nome: usuario.name,
+                    cpf: usuario.cpf,
+                    rg: usuario.rg || null,
+                    dataNascimento: usuario.data_nascimento,
+                    email: usuario.email
+                },
+                carteirinhasPorAno
+            });
+
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({
+                statusRequest: false,
+                message: "Erro ao buscar carteirinhas."
+            });
+        }
+    }
+
+
+
 
 
 
