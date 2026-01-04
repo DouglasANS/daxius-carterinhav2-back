@@ -20,7 +20,8 @@ module.exports = {
                     "c.validade",
                     "c.ano",
                     "c.data_criacao",
-                    "c.data_atualizacao"
+                    "c.data_atualizacao",
+                    "u.email",
                 )
                 .orderBy("c.id")
                 .limit(LIMIT)

@@ -319,6 +319,45 @@ module.exports = {
 
             console.log('produtosComStatus', produtosComStatus)
 
+            const carteirinha = await knex("ueb_sistem.carteirinha_user")
+                .where({ user_id })
+                .orderBy("id", "desc")
+                .first();
+
+            // --------------------------------------------------------
+            // 🐞 CORREÇÃO DE BUG — usuário sem histórico algum
+            // --------------------------------------------------------
+
+            const usuarioSemHistorico = historicos.length === 0;
+
+            if (
+                usuarioSemHistorico &&
+                carteirinha &&
+                carteirinha.digital === 1 &&
+                carteirinha.fisica === 1
+            ) {
+                const produtoCombo = produtosComStatus.find(
+                    p => p.digital === 1 && p.fisica === 1 && p.frete === 1
+                );
+
+                if (produtoCombo) {
+                    return res.json([
+                        {
+                            ...produtoCombo,
+                            preco: 0,
+                            statusHistorico: "paid",
+                            historico: {
+                                status: "paid",
+                                valor: 0,
+                                fake: true,
+                                observacao: "historico_gerado_por_migracao",
+                                data_criacao: new Date()
+                            }
+                        }
+                    ]);
+                }
+            }
+
             // --------------------------------------------------------
             // 5. 🔥 NOVA REGRA PRINCIPAL: esconder os produtos maiores
             // --------------------------------------------------------

@@ -25,6 +25,7 @@ const hasRole = require('./src/middlewares/hasRole');
 
 routes.post('/loginsistem', authAdmController.login);
 routes.post('/verifycpfexist', UtilsAdmController.verifyCpfExist);
+routes.post('/verifyemailexist', UtilsAdmController.verifyEmailExist);
 
 
 routes.post('/registeradm', authMiddleware, authController.registerByModerador);

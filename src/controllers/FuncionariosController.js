@@ -7,7 +7,7 @@ module.exports = {
     async criarFuncionario(req, res) {
         try {
             const {
-                nome,
+                name,
                 cpf,
                 email,
                 senha,
@@ -15,7 +15,7 @@ module.exports = {
             } = req.body;
 
             // 1️⃣ Validações básicas
-            if (!nome || !cpf || !email || !senha || !criado_por) {
+            if (!name || !cpf || !email || !senha || !criado_por) {
                 return res.status(400).json({
                     statusRequest: false,
                     message: "Dados obrigatórios não informados."
@@ -39,7 +39,7 @@ module.exports = {
 
             // 4️⃣ Inserção
             const [id] = await knex("ueb_sistem.users").insert({
-                name: nome,
+                name: name,
                 cpf,
                 email,
                 password: senhaHash,

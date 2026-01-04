@@ -35,7 +35,7 @@ module.exports = {
                 nome,
                 email,
                 senha: hash,
-                role: 1,  
+                role: 1,
                 ativo: 1,
                 criado_em: knex.fn.now(),
                 data_atualizacao: knex.fn.now()
@@ -62,17 +62,15 @@ module.exports = {
     async login(req, res) {
         const { email, senha } = req.body;
 
-        console.log(email, senha)
-
         try {
             const user = await knex("ueb_sistem.users")
-                .where({ email })
+                .whereRaw('LOWER(email) = LOWER(?)', [email.trim()])
                 .first();
 
             if (!user) {
-                return res.status(404).json({ 
-                    error: "Usuário não encontrado", 
-                    statusRequest: false 
+                return res.status(404).json({
+                    error: "Usuário não encontrado",
+                    statusRequest: false
                 });
             }
 
@@ -82,14 +80,18 @@ module.exports = {
                     statusRequest: false
                 });
             }
-            console.log(user)
 
-            
+            // 🔒 BLOQUEIO POR ROLE
+            // roles permitidos: funcionario, adm
+            if (!["funcionario", "adm"].includes(user.role)) {
+                return res.status(403).json({
+                    error: "Usuário não autorizado a acessar o sistema",
+                    statusRequest: false
+                });
+            }
 
-            console.log('check')
-            // Verifica senha
+            // 🔐 Verifica senha
             const check = await bcrypt.compare(senha, user.password);
-            console.log(check)
 
             if (!check) {
                 return res.status(401).json({
@@ -97,23 +99,25 @@ module.exports = {
                     statusRequest: false
                 });
             }
-            // Gera token JWT
+
+            // 🔑 Gera token JWT
             const token = jwt.sign(
-                { id: user.id, email: user.email, tipo: user.tipo },
+                {
+                    id: user.id,
+                    email: user.email,
+                    role: user.role
+                },
                 JWT_SECRET,
                 { expiresIn: "8h" }
             );
 
-            // Salva o token no banco
+            // 🕒 Atualiza último login
             await knex("ueb_sistem.users")
                 .where({ id: user.id })
                 .update({
-                   /*  jwt_token: token, */
                     ultimo_login: knex.fn.now(),
                     data_atualizacao: knex.fn.now()
                 });
-
-     
 
             return res.json({
                 message: "Login realizado com sucesso",
@@ -121,7 +125,7 @@ module.exports = {
                     id: user.id,
                     name: user.name,
                     email: user.email,
-                    tipo: user.role
+                    role: user.role
                 },
                 token,
                 statusRequest: true
@@ -135,5 +139,6 @@ module.exports = {
             });
         }
     }
+
 
 };

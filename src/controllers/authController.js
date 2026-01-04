@@ -12,8 +12,6 @@ module.exports = {
         const ip = req.user.ip;
         const userAgent = req.user.userAgent;
 
-
-
         const {
             name,
             email,
@@ -29,7 +27,8 @@ module.exports = {
             tipo_carteira,
             cod_identificador = '7A137F5',
             image_base64,
-            produto_id
+            produto_id,
+            permissonCarteirinha
         } = req.body;
 
         const trx = await knex.transaction();
@@ -108,57 +107,57 @@ module.exports = {
             });
 
             // 4️⃣ Cria cliente no Pagar.me
-            /*  try {
-                 const apiKey = process.env.PAGARME_API_KEY;
-                 const token = Buffer.from(apiKey + ':').toString('base64');
- 
-                 const customerData = {
-                     external_id: `cli_${userId}_${Date.now()}`,
-                     name: name || 'Cliente Padrão',
-                     type: 'individual',
-                     country: 'br',
-                     email: email || 'sememail@teste.com',
-                     document: cpf,
-                     document_type: 'CPF',
-                     phones: phone
-                         ? {
-                             home_phone: {
-                                 country_code: phone.country_code,
-                                 area_code: phone.area_code,
-                                 number: phone.number
-                             }
-                         }
-                         : undefined
-                 };
- 
-                 const response = await axios.post(
-                     'https://api.pagar.me/core/v5/customers',
-                     customerData,
-                     {
-                         headers: {
-                             Accept: 'application/json',
-                             'Content-Type': 'application/json',
-                             Authorization: `Basic ${token}`
-                         }
-                     }
-                 );
- 
-                 // Atualiza usuário com o ID do cliente Pagar.me
-                 await trx("ueb_sistem.users")
-                     .where({ id: userId })
-                     .update({ pagarme_customer_id: response.data.id });
- 
-                 console.log("Cliente criado no Pagar.me:", response.data.id);
- 
-             } catch (pagarmeError) {
-                 console.error("Erro ao criar cliente no Pagar.me:", pagarmeError.response?.data || pagarmeError.message);
-                 // Continua execução mesmo que falhe no Pagar.me
-             } */
+            try {
+                const apiKey = process.env.PAGARME_API_KEY;
+                const token = Buffer.from(apiKey + ':').toString('base64');
+
+                const customerData = {
+                    external_id: `cli_${userId}_${Date.now()}`,
+                    name: name || 'Cliente Padrão',
+                    type: 'individual',
+                    country: 'br',
+                    email: email || 'sememail@teste.com',
+                    document: cpf,
+                    document_type: 'CPF',
+                    phones: phone
+                        ? {
+                            home_phone: {
+                                country_code: phone.country_code,
+                                area_code: phone.area_code,
+                                number: phone.number
+                            }
+                        }
+                        : undefined
+                };
+
+                const response = await axios.post(
+                    'https://api.pagar.me/core/v5/customers',
+                    customerData,
+                    {
+                        headers: {
+                            Accept: 'application/json',
+                            'Content-Type': 'application/json',
+                            Authorization: `Basic ${token}`
+                        }
+                    }
+                );
+
+                // Atualiza usuário com o ID do cliente Pagar.me
+                await trx("ueb_sistem.users")
+                    .where({ id: userId })
+                    .update({ pagarme_customer_id: response.data.id });
+
+                console.log("Cliente criado no Pagar.me:", response.data.id);
+
+            } catch (pagarmeError) {
+                console.error("Erro ao criar cliente no Pagar.me:", pagarmeError.response?.data || pagarmeError.message);
+                // Continua execução mesmo que falhe no Pagar.me
+            }
 
             // Busca produto
-            const produto = await trx("ueb_sistem.produtos")
+            /* const produto = await trx("ueb_sistem.produtos")
                 .where({ id: produto_id, ativo: true })
-                .first();
+                .first(); */
 
             var codUso = await gerarCodUsoUnico()
 
@@ -179,9 +178,9 @@ module.exports = {
                 ano: anoAtual,
                 status: 'paid',
 
-                fisica: produto?.fisica,
-                digital: produto?.digital,
-                frete: produto?.frete,
+                fisica: permissonCarteirinha?.fisica == true ? 1 : 0,
+                digital: permissonCarteirinha?.digital == true ? 1 : 0,
+                frete: permissonCarteirinha?.frete == true ? 1 : 0,
                 approved: 1,
             });
 
@@ -202,26 +201,31 @@ module.exports = {
                 });
             }
 
-            // 7️⃣ Busca produto e cria pagamento manual (caso tenha produto)
-            if (produto_id) {
+            function formatToDecimal(value) {
+                if (value === null || value === undefined) return 0;
 
+                const numeric = String(value).replace(/\D/g, '');
 
-                if (!produto) {
-                    await trx.rollback();
-                    return res.status(404).json({ error: "Produto não encontrado ou inativo.", statusRequest: false });
+                if (numeric.length < 3) {
+                    return Number((numeric.padStart(3, '0').slice(0, -2) + '.' + numeric.slice(-2)));
                 }
 
-                await trx("ueb_sistem.pagamentos_historico").insert({
-                    user_id: userId,
-                    carteirinha_id: carteirinhaId,
-                    produto_id,
-                    price: produto.preco,
-                    forma_pagamento: "dinheiro",
-                    status: "pago",
-                    data_criacao: knex.fn.now(),
-                    data_confirmacao: knex.fn.now(),
-                });
+                return Number(
+                    numeric.slice(0, -2) + '.' + numeric.slice(-2)
+                );
             }
+            const price = formatToDecimal(permissonCarteirinha.valorTotal);
+
+            await trx("ueb_sistem.pagamentos_historico").insert({
+                user_id: userId,
+                carteirinha_id: carteirinhaId,
+                produto_id,
+                price: price,
+                forma_pagamento: "dinheiro",
+                status: "paid",
+                data_criacao: knex.fn.now(),
+                data_confirmacao: knex.fn.now(),
+            });
 
             // 8️⃣ Cria métrica de criação
             const now = new Date();
