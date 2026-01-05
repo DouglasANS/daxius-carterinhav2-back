@@ -7,7 +7,7 @@ module.exports = {
     try {
       const { user_id, customerId, produto_id } = req.body;
 
-      const config = await knex("ueb_sistem.current_carteirinha") // Atualizado
+      const config = await knex("areadoaluno.current_carteirinha") // Atualizado
         .where({ id: 1 })
         .first();
 
@@ -27,7 +27,7 @@ module.exports = {
       }
 
       // 🔹 Verifica carteirinha do usuário
-      const carteirinha = await knex("ueb_sistem.carteirinha_user")  // Atualizado
+      const carteirinha = await knex("areadoaluno.carteirinha_user")  // Atualizado
         .where({ user_id, ano: anoAtual })
         .orderBy("id", "desc")
         .first();
@@ -38,7 +38,7 @@ module.exports = {
 
 
       // 🔹 Verifica histórico de pagamento PENDENTE para o MESMO produto
-      const pendente = await knex("ueb_sistem.pagamentos_historico")
+      const pendente = await knex("areadoaluno.pagamentos_historico")
         .where({ user_id, produto_id, status: "pending", ano: anoAtual })
         .first();
 
@@ -52,7 +52,7 @@ module.exports = {
       }
 
       // 🔹 Buscar produto
-      const produto = await knex("ueb_sistem.produtos")
+      const produto = await knex("areadoaluno.produtos")
         .where({ id: produto_id })
         .first();
 
@@ -98,7 +98,7 @@ module.exports = {
       console.log('pedido - - -- - -', pedido.charges?.[0]?.last_transaction)
 
       // 🔹 Inserir UM registro no histórico
-      await knex("ueb_sistem.pagamentos_historico").insert({
+      await knex("areadoaluno.pagamentos_historico").insert({
         user_id,
         produto_id,
         pagarme_order_id: pedido.id,
@@ -133,8 +133,8 @@ module.exports = {
   },
   async listarCarteirinhasPendentes(req, res) {
     try {
-      const resultados = await knex("ueb_sistem.carteirinha_user as c")
-        .join("ueb_sistem.users as u", "u.id", "c.user_id")
+      const resultados = await knex("areadoaluno.carteirinha_user as c")
+        .join("areadoaluno.users as u", "u.id", "c.user_id")
         .select(
           "c.id as carteirinha_id",
           "c.user_id",

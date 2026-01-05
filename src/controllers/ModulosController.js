@@ -3,7 +3,7 @@ const knex = require('../database')
 module.exports = {
     async index(req, res) {
         try {
-            const results = await knex.select('*').from('ueb_sistem.modulos').orderBy('id', 'asc');
+            const results = await knex.select('*').from('areadoaluno.modulos').orderBy('id', 'asc');
             return res.json(results);
         } catch (error) {
             console.error(error);
@@ -15,7 +15,7 @@ module.exports = {
     async show(req, res) {
         try {
             const { id } = req.params;
-            const modulo = await knex('ueb_sistem.modulos').where({ id }).first();
+            const modulo = await knex('areadoaluno.modulos').where({ id }).first();
 
             if (!modulo) {
                 return res.status(404).json({ error: 'Módulo não encontrado' });
@@ -40,7 +40,7 @@ module.exports = {
                 return res.status(400).json({ error: 'O campo módulo é obrigatório' });
             }
 
-            const [id] = await knex('ueb_sistem.modulos').insert({ nome, descricao, modulo });
+            const [id] = await knex('areadoaluno.modulos').insert({ nome, descricao, modulo });
 
             return res.status(201).json({ id, message: 'Módulo criado com sucesso' });
         } catch (error) {
@@ -54,13 +54,13 @@ module.exports = {
         try {
             const { id, nome, descricao, modulo } = req.body;
 
-            const moduloData = await knex('ueb_sistem.modulos').where({ id }).first();
+            const moduloData = await knex('areadoaluno.modulos').where({ id }).first();
 
             if (!moduloData) {
                 return res.status(404).json({ error: 'Módulo não encontrado' });
             }
 
-            await knex('ueb_sistem.modulos')
+            await knex('areadoaluno.modulos')
                 .where({ id })
                 .update({
                     nome,
@@ -81,7 +81,7 @@ module.exports = {
         try {
             const { id } = req.params;
 
-            const deleted = await knex('ueb_sistem.modulos').where({ id }).del();
+            const deleted = await knex('areadoaluno.modulos').where({ id }).del();
 
             if (!deleted) {
                 return res.status(404).json({ error: 'Módulo não encontrado' });

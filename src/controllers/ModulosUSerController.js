@@ -3,7 +3,7 @@ const knex = require('../database')
 module.exports = {
     async index(req, res) {
         try {
-            const results = await knex.select('*').from('ueb_sistem.modulos_user').orderBy('id', 'asc');
+            const results = await knex.select('*').from('areadoaluno.modulos_user').orderBy('id', 'asc');
             return res.json(results);
         } catch (error) {
             console.error(error);
@@ -17,7 +17,7 @@ module.exports = {
             const { user_id } = req.body;
     
             // 1️⃣ Busca todos os vínculos do usuário
-            const vinculos = await knex('ueb_sistem.modulos_user')
+            const vinculos = await knex('areadoaluno.modulos_user')
                 .where({ user_id });
     
             if (vinculos.length === 0) {
@@ -32,7 +32,7 @@ module.exports = {
             const modulosIds = vinculos.map(v => v.modulo_id);
     
             // 3️⃣ Busca informações completas dos módulos
-            const modulosData = await knex('ueb_sistem.modulos')
+            const modulosData = await knex('areadoaluno.modulos')
                 .whereIn('id', modulosIds)
                 .select('id', 'nome', 'descricao', 'modulo');
     
@@ -61,7 +61,7 @@ module.exports = {
                 return res.status(400).json({ error: 'Campos obrigatórios: user_id e modulo_id' });
             }
 
-            const [id] = await knex('ueb_sistem.modulos_user').insert({ user_id, modulo_id });
+            const [id] = await knex('areadoaluno.modulos_user').insert({ user_id, modulo_id });
 
             return res.status(201).json({ id, message: 'Vínculo criado com sucesso' });
         } catch (error) {
@@ -75,13 +75,13 @@ module.exports = {
         try {
             const { id, user_id, modulo_id } = req.body;
 
-            const vinculo = await knex('ueb_sistem.modulos_user').where({ id }).first();
+            const vinculo = await knex('areadoaluno.modulos_user').where({ id }).first();
 
             if (!vinculo) {
                 return res.status(404).json({ error: 'Vínculo não encontrado' });
             }
 
-            await knex('ueb_sistem.modulos_user')
+            await knex('areadoaluno.modulos_user')
                 .where({ id })
                 .update({ user_id, modulo_id });
 
@@ -97,7 +97,7 @@ module.exports = {
         try {
             const { id } = req.params;
 
-            const deleted = await knex('ueb_sistem.modulos_user').where({ id }).del();
+            const deleted = await knex('areadoaluno.modulos_user').where({ id }).del();
 
             if (!deleted) {
                 return res.status(404).json({ error: 'Vínculo não encontrado' });

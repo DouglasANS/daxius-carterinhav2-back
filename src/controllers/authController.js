@@ -33,7 +33,7 @@ module.exports = {
 
         const trx = await knex.transaction();
 
-        const config = await knex("ueb_sistem.current_carteirinha")
+        const config = await knex("areadoaluno.current_carteirinha")
             .where({ id: 1 })
             .first();
 
@@ -60,7 +60,7 @@ module.exports = {
             while (existe) {
                 codigo = gerarTextoAleatorio();
 
-                const encontrado = await trx("ueb_sistem.carteirinha_user")
+                const encontrado = await trx("areadoaluno.carteirinha_user")
                     .where("cod_uso", codigo)
                     .first();
 
@@ -72,13 +72,13 @@ module.exports = {
 
         try {
             // 1️⃣ Verifica duplicidade de CPF e e-mail
-            const existingCpf = await trx("ueb_sistem.users").where({ cpf }).first();
+            const existingCpf = await trx("areadoaluno.users").where({ cpf }).first();
             if (existingCpf) {
                 await trx.rollback();
                 return res.status(409).json({ error: "CPF já cadastrado.", statusRequest: false });
             }
 
-            const existingEmail = await trx("ueb_sistem.users").where({ email }).first();
+            const existingEmail = await trx("areadoaluno.users").where({ email }).first();
             if (existingEmail) {
                 await trx.rollback();
                 return res.status(409).json({ error: "E-mail já cadastrado.", statusRequest: false });
@@ -92,7 +92,7 @@ module.exports = {
                 ? `${phone.country_code}${phone.area_code}${phone.number}`
                 : null;
 
-            const [userId] = await trx("ueb_sistem.users").insert({
+            const [userId] = await trx("areadoaluno.users").insert({
                 name,
                 email,
                 password: hash,
@@ -143,7 +143,7 @@ module.exports = {
                 );
 
                 // Atualiza usuário com o ID do cliente Pagar.me
-                await trx("ueb_sistem.users")
+                await trx("areadoaluno.users")
                     .where({ id: userId })
                     .update({ pagarme_customer_id: response.data.id });
 
@@ -155,7 +155,7 @@ module.exports = {
             }
 
             // Busca produto
-            /* const produto = await trx("ueb_sistem.produtos")
+            /* const produto = await trx("areadoaluno.produtos")
                 .where({ id: produto_id, ativo: true })
                 .first(); */
 
@@ -164,7 +164,7 @@ module.exports = {
             console.log(codUso)
 
             // 5️⃣ Cria carteirinha vinculada
-            const [carteirinhaId] = await trx("ueb_sistem.carteirinha_user").insert({
+            const [carteirinhaId] = await trx("areadoaluno.carteirinha_user").insert({
                 user_id: userId,
                 instituicao,
                 curso,
@@ -192,9 +192,9 @@ module.exports = {
 
             // 6️⃣ Salva imagem Base64 (caso enviada)
             if (image_base64) {
-                await trx("ueb_sistem.carteirinha_image").insert({
+                await trx("areadoaluno.carteira").insert({
                     user_id: userId,
-                    image: image_base64,
+                    imagem: image_base64,
                     data_criacao: knex.fn.now(),
                     carteirinha_id: carteirinhaId,
                     size: image_base64 ? base64ToSize(image_base64) : undefined,
@@ -216,7 +216,7 @@ module.exports = {
             }
             const price = formatToDecimal(permissonCarteirinha.valorTotal);
 
-            await trx("ueb_sistem.pagamentos_historico").insert({
+            await trx("areadoaluno.pagamentos_historico").insert({
                 user_id: userId,
                 carteirinha_id: carteirinhaId,
                 produto_id,
@@ -231,7 +231,7 @@ module.exports = {
             const now = new Date();
             const ano = now.getFullYear();
 
-            await trx("ueb_sistem.metricas_registro_carteirinha").insert({
+            await trx("areadoaluno.metricas_registro_carteirinha").insert({
                 data_cadastro: now,
                 id_funcionario: criadoPor_id,
                 ano,
@@ -272,7 +272,7 @@ module.exports = {
             }
 
             // 🔍 Verifica se já existe um usuário com mesmo CPF ou E-mail
-            const existingUser = await trx("ueb_sistem.users")
+            const existingUser = await trx("areadoaluno.users")
                 .where("cpf", cpf)
                 .orWhere("email", email)
                 .first();
@@ -297,7 +297,7 @@ module.exports = {
                 : null;
 
             // 🧾 Cria usuário local
-            const [userId] = await trx("ueb_sistem.users").insert({
+            const [userId] = await trx("areadoaluno.users").insert({
                 name,
                 email,
                 password: hash,
@@ -352,7 +352,7 @@ module.exports = {
                 console.log(response)
 
                 // 💾 Atualiza usuário com o ID do cliente no Pagar.me
-                await trx("ueb_sistem.users")
+                await trx("areadoaluno.users")
                     .where({ id: userId })
                     .update({ pagarme_customer_id: response.data.id });
 
@@ -407,7 +407,7 @@ module.exports = {
         const { email, password } = req.body;
 
         try {
-            const user = await knex("ueb_sistem.users").where({ email }).first();
+            const user = await knex("areadoaluno.users").where({ email }).first();
 
             if (!user) {
                 return res.status(404).json({ error: "Usuário não encontrado", statusRequest: false });
@@ -443,7 +443,7 @@ module.exports = {
                     mensagemExtra = `Usuário bloqueado por ${duracaoMin >= 60 ? duracaoMin / 60 + "h" : duracaoMin + "min"}.`;
                 }
 
-                await knex("ueb_sistem.users")
+                await knex("areadoaluno.users")
                     .where({ id: user.id })
                     .update({
                         tentativas_login: novasTentativas,
@@ -460,7 +460,7 @@ module.exports = {
             }
 
             // Reset tentativas e bloqueios após sucesso
-            await knex("ueb_sistem.users")
+            await knex("areadoaluno.users")
                 .where({ id: user.id })
                 .update({
                     tentativas_login: 0,
@@ -470,7 +470,7 @@ module.exports = {
 
             // 🔹 Incrementa métrica de login diário
             await knex.raw(`
-                INSERT INTO ueb_sistem.metricas_login_diario (data, total_logins)
+                INSERT INTO areadoaluno.metricas_login_diario (data, total_logins)
                 VALUES (CURRENT_DATE, 1)
                 ON DUPLICATE KEY UPDATE total_logins = total_logins + 1
             `);
@@ -505,7 +505,7 @@ module.exports = {
         try {
             const { id } = req.body;
 
-            const result = await knex('ueb_sistem.users')
+            const result = await knex('areadoaluno.users')
                 .select('pagarme_customer_id')
                 .where('id', id)
                 .first();

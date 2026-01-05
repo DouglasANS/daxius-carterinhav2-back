@@ -11,8 +11,8 @@ module.exports = {
             }
 
             // Consulta a imagem
-            const result = await knex("ueb_sistem.carteirinha_image")
-                .select("image")
+            const result = await knex("areadoaluno.carteira")
+                .select("imagem")
                 .where({ carteirinha_id: carteirinha_id })
                 .first();
 

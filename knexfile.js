@@ -1,26 +1,23 @@
 // Update with your config settings.
+require('dotenv').config()
 
 module.exports = {
 
   development: {
     client: 'mysql2',
-    connection: {
-      database: "ccicontrole",
-      user: "root",
-      password: "123456", 
-      typeCast: function (field, next) {
-        if (field.type === 'DATE') {
-          return field.string(); // ← retorna como string "2025-07-07"
-        }
-        return next();
-      }
-    },
+      connection: {
+        host: process.env.HOST, // External Host
+        port: process.env.PORT,// External Port
+        database: process.env.DATABASE, // Nome do banco de dados na URL
+        user: process.env.USER, // Usuário extraído da URL
+        password: process.env.PASSWORD  // Senha extraída da URL
+      },
     migrations: {
       tableName: 'knex_migrations',
-      directory: `${__dirname}/src/database/migrations` 
+      directory: `${__dirname}/src/database/migrations`
     },
     seeds: {
-      directory: `${__dirname}/src/database/seeds` 
+      directory: `${__dirname}/src/database/seeds`
     }
   }
 };

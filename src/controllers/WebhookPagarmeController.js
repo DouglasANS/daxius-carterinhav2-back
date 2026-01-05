@@ -17,7 +17,7 @@ module.exports = {
       console.log('2', { orderId, status });
 
       // 🔹 Busca pagamentos no histórico
-      const pagamentos = await knex("ueb_sistem.pagamentos_historico")
+      const pagamentos = await knex("areadoaluno.pagamentos_historico")
         .where({ pagarme_order_id: orderId });
 
       if (!pagamentos || pagamentos.length === 0) {
@@ -27,7 +27,7 @@ module.exports = {
       console.log('3', pagamentos);
 
       // 🔹 Atualiza status do pagamento
-      await knex("ueb_sistem.pagamentos_historico")
+      await knex("areadoaluno.pagamentos_historico")
         .where({ pagarme_order_id: orderId })
         .update({ status: status, data_atualizacao: knex.fn.now() });
 
@@ -36,7 +36,7 @@ module.exports = {
 
       // 🔹 Atualiza status da carteirinha (somente pending ou expirado)
       for (const pagamento of pagamentos) {
-        const carteirinha = await knex("ueb_sistem.carteirinha_user")  // Atualizado
+        const carteirinha = await knex("areadoaluno.carteirinha_user")  // Atualizado
           .where({ user_id: pagamento.user_id, ano: pagamento.ano })
           .orderBy("id", "desc")
           .first();
@@ -46,7 +46,7 @@ module.exports = {
         if (carteirinha && (carteirinha.status === 'pending' || carteirinha.status === 'expirado' || carteirinha.status === null)) {
           // Atualiza somente a carteirinha específica
           if (status === 'paid') {
-            await knex("ueb_sistem.carteirinha_user") // Atualizado
+            await knex("areadoaluno.carteirinha_user") // Atualizado
               .where({ id: carteirinha.id })  // ✅ aqui usamos o id
               .update({ status: 'paid', data_atualizacao: knex.fn.now(), approved: 1 });
 

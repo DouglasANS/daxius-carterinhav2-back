@@ -3,7 +3,7 @@ const knex = require('../database')
 module.exports = {
     async registrosPorMes(req, res, next) {
         try {
-            const dados = await knex('ueb_sistem.metricas_registro_carteirinha')
+            const dados = await knex('areadoaluno.metricas_registro_carteirinha')
                 .select(
                     knex.raw('YEAR(data_cadastro) AS ano'),
                     knex.raw('MONTH(data_cadastro) AS mes'),
@@ -36,7 +36,7 @@ module.exports = {
             // 1️⃣ Métricas agregadas (SEM JOIN)
             const metricas = await knex
                 .from(
-                    knex('ueb_sistem.metricas_registro_carteirinha')
+                    knex('areadoaluno.metricas_registro_carteirinha')
                         .select(
                             knex.raw('YEAR(data_cadastro) AS ano'),
                             'id_funcionario'
@@ -49,7 +49,7 @@ module.exports = {
                 .orderBy('ano', 'asc');
 
             // 2️⃣ Funcionários válidos
-            const funcionarios = await knex('ueb_sistem.users')
+            const funcionarios = await knex('areadoaluno.users')
                 .select('id', 'name')
                 .whereIn('role', ['adm', 'funcionario'])
 
@@ -87,7 +87,7 @@ module.exports = {
     ,
     async registrosPorAno(req, res, next) {
         try {
-            const dados = await knex('ueb_sistem.metricas_registro_carteirinha')
+            const dados = await knex('areadoaluno.metricas_registro_carteirinha')
                 .select('ano')
                 .count('* as total')
                 .groupBy('ano');
@@ -106,7 +106,7 @@ module.exports = {
     async registrosPorDiaFuncionario(req, res, next) {
         try {
             // Versão corrigida
-            const metricas = await knex('ueb_sistem.metricas_registro_carteirinha as m')
+            const metricas = await knex('areadoaluno.metricas_registro_carteirinha as m')
                 .select(
                     knex.raw('DATE(m.data_cadastro) as data'),
                     'm.id_funcionario',
@@ -115,7 +115,7 @@ module.exports = {
                 .groupByRaw('DATE(m.data_cadastro), m.id_funcionario')
                 .orderBy('data', 'asc');
 
-            const funcionarios = await knex('ueb_sistem.users')
+            const funcionarios = await knex('areadoaluno.users')
                 .select('id', 'name')
                 .whereIn('role', ['adm', 'funcionario']);
 

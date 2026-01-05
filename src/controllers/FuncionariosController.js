@@ -23,7 +23,7 @@ module.exports = {
             }
 
             // 2️⃣ Verificar CPF duplicado
-            const cpfExiste = await knex("ueb_sistem.users")
+            const cpfExiste = await knex("areadoaluno.users")
                 .where({ cpf })
                 .first();
 
@@ -38,7 +38,7 @@ module.exports = {
             const senhaHash = await bcrypt.hash(senha, 10);
 
             // 4️⃣ Inserção
-            const [id] = await knex("ueb_sistem.users").insert({
+            const [id] = await knex("areadoaluno.users").insert({
                 name: name,
                 cpf,
                 email,
@@ -65,7 +65,7 @@ module.exports = {
     },
     async listarFuncionarios(req, res) {
         try {
-            const funcionarios = await knex("ueb_sistem.users")
+            const funcionarios = await knex("areadoaluno.users")
                 .select(
                     "id",
                     "name",
@@ -102,7 +102,7 @@ module.exports = {
                 });
             }
 
-            const funcionario = await knex("ueb_sistem.users")
+            const funcionario = await knex("areadoaluno.users")
                 .where({ id, role: "funcionario" })
                 .first();
 
@@ -115,7 +115,7 @@ module.exports = {
 
             // Verificar CPF duplicado (exceto o próprio)
             if (cpf) {
-                const cpfExiste = await knex("ueb_sistem.users")
+                const cpfExiste = await knex("areadoaluno.users")
                     .where({ cpf })
                     .andWhereNot({ id })
                     .first();
@@ -138,7 +138,7 @@ module.exports = {
                 dadosAtualizacao.password = await bcrypt.hash(senha, 10);
             }
 
-            await knex("ueb_sistem.users")
+            await knex("areadoaluno.users")
                 .where({ id })
                 .update(dadosAtualizacao);
 
@@ -166,7 +166,7 @@ module.exports = {
                 });
             }
 
-            const funcionario = await knex("ueb_sistem.users")
+            const funcionario = await knex("areadoaluno.users")
                 .where({ id, role: "funcionario" })
                 .first();
 
@@ -177,7 +177,7 @@ module.exports = {
                 });
             }
 
-            await knex("ueb_sistem.users")
+            await knex("areadoaluno.users")
                 .where({ id })
                 .update({ ativo: 0 });
 

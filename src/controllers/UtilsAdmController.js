@@ -7,7 +7,7 @@ module.exports = {
         try {
             const { cpf } = req.body;
 
-            const [user] = await knex('ueb_sistem.users').where('cpf', cpf);
+            const [user] = await knex('areadoaluno.users').where('cpf', cpf);
 
             if (!user) {
                 return res.send({ auth: false, message: 'CPF não encontrado', find: false });
@@ -32,7 +32,7 @@ module.exports = {
                 });
             }
 
-            const [user] = await knex('ueb_sistem.users')
+            const [user] = await knex('areadoaluno.users')
                 .select('cpf') // 🔹 retorna apenas o necessário
                 .whereRaw('LOWER(email) = LOWER(?)', [email.trim()]);
 

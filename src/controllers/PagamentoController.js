@@ -170,7 +170,7 @@ module.exports = {
             }
 
             // Busca todos os produtos cujos IDs estão no array
-            const produtos = await knex("ueb_sistem.produtos")
+            const produtos = await knex("areadoaluno.produtos")
                 .whereIn("id", items_produto_id);
 
             // Verifica se todos os produtos foram encontrados

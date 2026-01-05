@@ -15,7 +15,7 @@ module.exports = {
 
         try {
             // Verificar se email existe
-            const already = await knex("ueb_sistem.users")
+            const already = await knex("areadoaluno.users")
                 .where({ email })
                 .first();
 
@@ -31,7 +31,7 @@ module.exports = {
             const hash = await bcrypt.hash(senha, salt);
 
             // Criar usuário (tipo = 1 = FUNCIONÁRIO)
-            const [id] = await knex("ueb_sistem.users").insert({
+            const [id] = await knex("areadoaluno.users").insert({
                 nome,
                 email,
                 senha: hash,
@@ -62,8 +62,10 @@ module.exports = {
     async login(req, res) {
         const { email, senha } = req.body;
 
+        console.log(email, senha)
+
         try {
-            const user = await knex("ueb_sistem.users")
+            const user = await knex("areadoaluno.users")
                 .whereRaw('LOWER(email) = LOWER(?)', [email.trim()])
                 .first();
 
@@ -112,7 +114,7 @@ module.exports = {
             );
 
             // 🕒 Atualiza último login
-            await knex("ueb_sistem.users")
+            await knex("areadoaluno.users")
                 .where({ id: user.id })
                 .update({
                     ultimo_login: knex.fn.now(),

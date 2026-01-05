@@ -4,13 +4,13 @@ module.exports = {
     async index(req, res) {
         try {
 
-            const config = await knex("ueb_sistem.current_carteirinha")
+            const config = await knex("areadoaluno.current_carteirinha")
                 .where({ id: 1 })
                 .first();
 
             const anoAtual = config?.ano || 2025;
 
-            const results = await knex('ueb_sistem.produtos')
+            const results = await knex('areadoaluno.produtos')
                 .select('*')
                 .where({ tipo: 'carteirinha', ativo: 1, ano: anoAtual }) // 👈 agora filtra só ativos
                 .orderBy('id', 'asc');
@@ -27,7 +27,7 @@ module.exports = {
             const { user_id } = req.body;
 
             // Buscar o ano atual da configuração
-            const config = await knex("ueb_sistem.current_carteirinha")
+            const config = await knex("areadoaluno.current_carteirinha")
                 .where({ id: 1 })
                 .first();
 
@@ -40,7 +40,7 @@ module.exports = {
             }
 
             // Buscar carteirinha do ano atual (mais recente)
-            const carteiraAnoAtual = await knex("ueb_sistem.carteirinha_user")
+            const carteiraAnoAtual = await knex("areadoaluno.carteirinha_user")
                 .where({ user_id, ano: anoAtual })
                 .orderBy("id", "desc")
                 .first();
@@ -57,7 +57,7 @@ module.exports = {
             }
 
             // 2️⃣ Procurar endereço de entrega para esta carteirinha
-            const enderecoEntrega = await knex("ueb_sistem.carteirinha_endereco")
+            const enderecoEntrega = await knex("areadoaluno.carteirinha_endereco")
                 .where({ carteirinha_id: carteiraAnoAtual.id })
                 .first();
 
@@ -127,7 +127,7 @@ module.exports = {
 
                 while (existe) {
                     codigo = gerarTextoAleatorio();
-                    const encontrado = await trx("ueb_sistem.carteirinha_user")
+                    const encontrado = await trx("areadoaluno.carteirinha_user")
                         .where("cod_uso", codigo)
                         .first();
                     existe = !!encontrado;
@@ -142,13 +142,13 @@ module.exports = {
                 });
             }
 
-            const config = await trx("ueb_sistem.current_carteirinha")
+            const config = await trx("areadoaluno.current_carteirinha")
                 .where({ id: 1 })
                 .first();
 
             const anoAtual = config?.ano || 2025;
 
-            const carteiraExistente = await trx('ueb_sistem.carteirinha_user')
+            const carteiraExistente = await trx('areadoaluno.carteirinha_user')
                 .where({ user_id, ano: anoAtual })
                 .first();
 
@@ -176,20 +176,20 @@ module.exports = {
                 editavel: 1
             };
 
-            const [idCriado] = await trx('ueb_sistem.carteirinha_user')
+            const [idCriado] = await trx('areadoaluno.carteirinha_user')
                 .insert(novaCarteirinha);
 
             if (image) {
-                await trx("ueb_sistem.carteirinha_image").insert({
+                await trx("areadoaluno.carteira").insert({
                     user_id: user_id,
                     carteirinha_id: idCriado,
-                    image: image,
+                    imagem: image,
                     size: imageSize || null
                 });
             }
 
             if (comprovante) {
-                await trx("ueb_sistem.carteirinha_comprovante").insert({
+                await trx("areadoaluno.carteirinha_comprovante").insert({
                     user_id: user_id,
                     carteirinha_id: idCriado,
                     documento: comprovante,
@@ -224,7 +224,7 @@ module.exports = {
             const { user_id } = req.body;
 
             // 0. Buscar ano atual da carteira
-            const config = await knex("ueb_sistem.current_carteirinha") // Atualizado
+            const config = await knex("areadoaluno.current_carteirinha") // Atualizado
                 .where({ id: 1 })
                 .first();
 
@@ -233,14 +233,14 @@ module.exports = {
             console.log(anoAtual)
 
             // 2. Buscar produtos ativos do ano ATUAL
-            const produtos = await knex("ueb_sistem.produtos")
+            const produtos = await knex("areadoaluno.produtos")
                 .where({ tipo: "carteirinha", ativo: 1, ano: anoAtual })
                 .select("*");
 
             console.log(produtos)
             // 3. Buscar todos os históricos do usuário para o ANO ATUAL
-            const historicos = await knex("ueb_sistem.pagamentos_historico as h")
-                .leftJoin("ueb_sistem.produtos as p", "h.produto_id", "p.id")
+            const historicos = await knex("areadoaluno.pagamentos_historico as h")
+                .leftJoin("areadoaluno.produtos as p", "h.produto_id", "p.id")
                 .where("h.user_id", user_id)
                 .andWhere("p.ano", anoAtual)
                 .select("h.*", "p.ano as produto_ano");
@@ -281,7 +281,7 @@ module.exports = {
                             if (now > expiresAt) {
                                 // expirou → atualizar no banco
                                 statusHistorico = "expired";
-                                await knex("ueb_sistem.pagamentos_historico")
+                                await knex("areadoaluno.pagamentos_historico")
                                     .where({ id: ultimoPending.id })
                                     .update({ status: "expired" });
 
@@ -319,7 +319,7 @@ module.exports = {
 
             console.log('produtosComStatus', produtosComStatus)
 
-            const carteirinha = await knex("ueb_sistem.carteirinha_user")
+            const carteirinha = await knex("areadoaluno.carteirinha_user")
                 .where({ user_id })
                 .orderBy("id", "desc")
                 .first();
@@ -425,7 +425,7 @@ module.exports = {
             }
 
             // Atualiza status approved = 1
-            const result = await knex("ueb_sistem.carteirinha_user")
+            const result = await knex("areadoaluno.carteirinha_user")
                 .where({ id: carteirinha_id })
                 .update({ approved: 1 });
 
@@ -465,14 +465,14 @@ module.exports = {
             }
 
             // 1️⃣ Buscar ano atual
-            const config = await knex("ueb_sistem.current_carteirinha")
+            const config = await knex("areadoaluno.current_carteirinha")
                 .where({ id: 1 })
                 .first();
 
             const anoAtual = config?.ano || 2025;
 
             // 2️⃣ Encontrar a carteirinha atual do usuário
-            const carteiraAnoAtual = await knex("ueb_sistem.carteirinha_user")
+            const carteiraAnoAtual = await knex("areadoaluno.carteirinha_user")
                 .where({ user_id, ano: anoAtual })
                 .orderBy("id", "desc")
                 .first();
@@ -485,7 +485,7 @@ module.exports = {
             }
 
             // 3️⃣ Verificar se essa carteirinha já tem endereço
-            const existe = await knex("ueb_sistem.carteirinha_endereco")
+            const existe = await knex("areadoaluno.carteirinha_endereco")
                 .where({ carteirinha_id: carteiraAnoAtual.id })
                 .first();
 
@@ -498,7 +498,7 @@ module.exports = {
             }
 
             // 4️⃣ Inserir o endereço
-            const [id] = await knex("ueb_sistem.carteirinha_endereco").insert({
+            const [id] = await knex("areadoaluno.carteirinha_endereco").insert({
                 carteirinha_id: carteiraAnoAtual.id,
                 cep,
                 logradouro,

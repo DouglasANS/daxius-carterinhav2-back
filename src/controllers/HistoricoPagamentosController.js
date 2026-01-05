@@ -6,7 +6,7 @@ module.exports = {
             const { user_id, produto_id } = req.body;
 
             // 1️⃣ Verifica se o produto existe
-            const produto = await knex("ueb_sistem.produtos").where({ id: produto_id }).first();
+            const produto = await knex("areadoaluno.produtos").where({ id: produto_id }).first();
             if (!produto) {
                 return res.status(400).json({
                     sucesso: false,
@@ -15,7 +15,7 @@ module.exports = {
             }
 
             // 2️⃣ Verifica se o usuário possui carteirinha
-            const carteirinha = await knex("ueb_sistem.carteirinha_user")
+            const carteirinha = await knex("areadoaluno.carteirinha_user")
                 .where({ user_id })
                 .orderBy("id", "desc")
                 .first();
@@ -87,7 +87,7 @@ module.exports = {
             } = req.body;
 
             // 1️⃣ Verifica se o produto existe
-            const produto = await knex("ueb_sistem.produtos").where({ id: produto_id }).first();
+            const produto = await knex("areadoaluno.produtos").where({ id: produto_id }).first();
             if (!produto) {
                 return res.status(400).json({
                     sucesso: false,
@@ -96,7 +96,7 @@ module.exports = {
             }
 
             // 2️⃣ Verifica se o usuário existe
-            const usuario = await knex("ueb_sistem.users").where({ id: user_id }).first();
+            const usuario = await knex("areadoaluno.users").where({ id: user_id }).first();
             if (!usuario) {
                 return res.status(404).json({
                     sucesso: false,
@@ -105,7 +105,7 @@ module.exports = {
             }
 
             // 3️⃣ Atualiza apenas data_nascimento e rg
-            await knex("ueb_sistem.users")
+            await knex("areadoaluno.users")
                 .where({ id: user_id })
                 .update({
                     data_nascimento,
@@ -114,7 +114,7 @@ module.exports = {
                 });
 
             // 4️⃣ Verifica se já existe uma carteirinha para o usuário
-            const carteirinhaExistente = await knex("ueb_sistem.carteirinha_user")
+            const carteirinhaExistente = await knex("areadoaluno.carteirinha_user")
                 .where({ user_id })
                 .first();
 
@@ -122,7 +122,7 @@ module.exports = {
 
             if (carteirinhaExistente) {
                 // Atualiza carteirinha existente
-                await knex("ueb_sistem.carteirinha_user")
+                await knex("areadoaluno.carteirinha_user")
                     .where({ user_id })
                     .update({
                         instituicao,
@@ -140,7 +140,7 @@ module.exports = {
                 carteirinhaId = carteirinhaExistente.id;
             } else {
                 // Cria nova carteirinha
-                const [novaCarteirinhaId] = await knex("ueb_sistem.carteirinha_user")
+                const [novaCarteirinhaId] = await knex("areadoaluno.carteirinha_user")
                     .insert({
                         user_id,
                         instituicao,
@@ -159,28 +159,28 @@ module.exports = {
             }
 
             // 5️⃣ Insere ou substitui a imagem da carteirinha
-            const imagemExistente = await knex("ueb_sistem.carteirinha_image")
+            const imagemExistente = await knex("areadoaluno.carteira")
                 .where({ user_id })
                 .first();
 
             if (imagemExistente) {
-                await knex("ueb_sistem.carteirinha_image")
+                await knex("areadoaluno.carteira")
                     .where({ user_id })
                     .update({
-                        image: imagem_url,
+                        imagem: imagem_url,
                         data_atualizacao: knex.fn.now()
                     });
             } else {
-                await knex("ueb_sistem.carteirinha_image")
+                await knex("areadoaluno.carteira")
                     .insert({
                         user_id,
-                        image: imagem_url,
+                        imagem: imagem_url,
                         data_criacao: knex.fn.now()
                     });
             }
 
             // 6️⃣ Cria registro no histórico de pagamento
-            await knex("ueb_sistem.pagamentos_historico").insert({
+            await knex("areadoaluno.pagamentos_historico").insert({
                 user_id,
                 produto_id,
                 price: produto.preco,
@@ -216,9 +216,9 @@ module.exports = {
             }
 
             // Busca todas as transações do usuário
-            const transacoes = await knex("ueb_sistem.pagamentos_historico as ph")
-                .leftJoin("ueb_sistem.produtos as p", "ph.produto_id", "p.id")
-                .leftJoin("ueb_sistem.carteirinha_user as c", "ph.carteirinha_id", "c.id")
+            const transacoes = await knex("areadoaluno.pagamentos_historico as ph")
+                .leftJoin("areadoaluno.produtos as p", "ph.produto_id", "p.id")
+                .leftJoin("areadoaluno.carteirinha_user as c", "ph.carteirinha_id", "c.id")
                 .select(
                     "ph.id",
                     "ph.user_id",
@@ -264,7 +264,7 @@ module.exports = {
         try {
             const { id } = req.body; // id da pagamentos_historico
 
-            const result = await knex('ueb_sistem.pagamentos_historico')
+            const result = await knex('areadoaluno.pagamentos_historico')
                 .where('id', id)
                 .update({
                     status: "expired",
@@ -294,7 +294,7 @@ module.exports = {
             }
 
             // 2️⃣ Buscar dados do usuário
-            const usuario = await knex("ueb_sistem.users")
+            const usuario = await knex("areadoaluno.users")
                 .select("name", "data_nascimento", "cpf", "rg")
                 .where("id", user_id)
                 .first();
@@ -307,7 +307,7 @@ module.exports = {
             }
 
             // 4️⃣ Buscar dados da carteirinha
-            const carteirinha = await knex("ueb_sistem.carteirinha_user") // Atualizado
+            const carteirinha = await knex("areadoaluno.carteirinha_user") // Atualizado
                 .select(
                     "id",
                     "instituicao",
@@ -370,8 +370,8 @@ module.exports = {
             }
 
             // 3️⃣ Buscar imagem da carteirinha
-            const imagem = await knex("ueb_sistem.carteirinha_image")
-                .select("image")
+            const imagem = await knex("areadoaluno.carteira")
+                .select("imagem")
                 .where({ user_id, carteirinha_id: carteirinha.id })
                 .first();
 
@@ -416,7 +416,7 @@ module.exports = {
             }
 
             // 1️⃣ Busca os pagamentos
-            const historico = await knex("ueb_sistem.pagamentos_historico")
+            const historico = await knex("areadoaluno.pagamentos_historico")
                 .where({ user_id })
                 .orderBy("id", "desc");
 
@@ -426,7 +426,7 @@ module.exports = {
                     let produto = null;
 
                     if (item.produto_id) {
-                        produto = await knex("ueb_sistem.produtos")
+                        produto = await knex("areadoaluno.produtos")
                             .where({ id: item.produto_id })
                             .first();
                     }

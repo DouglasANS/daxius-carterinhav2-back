@@ -15,7 +15,7 @@ module.exports = {
             }
 
             // 1️⃣ Buscar carteirinha pelo cod_uso (mais recente)
-            const carteirinha = await knex("ueb_sistem.carteirinha_user")
+            const carteirinha = await knex("areadoaluno.carteirinha_user")
                 .select(
                     "id",
                     "user_id",
@@ -69,7 +69,7 @@ module.exports = {
             }
 
             // 4️⃣ Buscar usuário
-            const usuario = await knex("ueb_sistem.users")
+            const usuario = await knex("areadoaluno.users")
                 .select("id", "name", "data_nascimento", "cpf", "rg", "email")
                 .where("id", carteirinha.user_id)
                 .first();
@@ -82,8 +82,8 @@ module.exports = {
             }
 
             // 5️⃣ Buscar imagem da carteirinha
-            const imagem = await knex("ueb_sistem.carteirinha_image")
-                .select("image")
+            const imagem = await knex("areadoaluno.carteira")
+                .select("imagem")
                 .where({
                     user_id: usuario.id,
                     carteirinha_id: carteirinha.id
@@ -107,7 +107,7 @@ module.exports = {
                     escolaridade: carteirinha.nivel_ensino || null,
                     validadeCarteirinha: carteirinha.validade,
                     ano: carteirinha.ano,
-                    imagem: imagem?.image || null
+                    imagem: imagem?.imagem || null
                 }
             });
 
@@ -123,6 +123,8 @@ module.exports = {
         try {
             const { cpf } = req.body;
 
+            console.log(cpf)
+
             if (!cpf) {
                 return res.status(400).json({
                     statusRequest: false,
@@ -131,10 +133,12 @@ module.exports = {
             }
 
             // 1️⃣ Buscar usuário pelo CPF
-            const usuario = await knex("ueb_sistem.users")
+            const usuario = await knex("areadoaluno.users")
                 .select("id", "name", "data_nascimento", "cpf", "rg", "email")
                 .where("cpf", cpf)
                 .first();
+
+            console.log(usuario)
 
             if (!usuario) {
                 return res.json({
@@ -144,7 +148,7 @@ module.exports = {
             }
 
             // 2️⃣ Buscar carteirinha mais recente do usuário
-            const carteirinha = await knex("ueb_sistem.carteirinha_user")
+            const carteirinha = await knex("areadoaluno.carteirinha_user")
                 .select(
                     "id",
                     "user_id",
@@ -198,8 +202,8 @@ module.exports = {
             }
 
             // 5️⃣ Buscar imagem da carteirinha
-            const imagem = await knex("ueb_sistem.carteirinha_image")
-                .select("image")
+            const imagem = await knex("areadoaluno.carteira")
+                .select("imagem")
                 .where({
                     user_id: usuario.id,
                     carteirinha_id: carteirinha.id
@@ -223,7 +227,7 @@ module.exports = {
                     escolaridade: carteirinha.nivel_ensino || null,
                     validadeCarteirinha: carteirinha.validade,
                     ano: carteirinha.ano,
-                    imagem: imagem?.image || null
+                    imagem: imagem?.imagem || null
                 }
             });
 
@@ -261,7 +265,7 @@ module.exports = {
             }
 
             // 1️⃣ Buscar usuário pelo CPF
-            const usuario = await knex("ueb_sistem.users")
+            const usuario = await knex("areadoaluno.users")
                 .where("cpf", cpf)
                 .first();
 
@@ -273,7 +277,7 @@ module.exports = {
             }
 
             // 2️⃣ Buscar carteirinha específica (CPF + cod_uso)
-            const carteirinha = await knex("ueb_sistem.carteirinha_user")
+            const carteirinha = await knex("areadoaluno.carteirinha_user")
                 .where({
                     user_id: usuario.id,
                     cod_uso: cod_uso
@@ -288,7 +292,7 @@ module.exports = {
             }
 
             // 3️⃣ Atualizar usuário
-            await knex("ueb_sistem.users")
+            await knex("areadoaluno.users")
                 .where("id", usuario.id)
                 .update({
                     name: nome ?? usuario.name,
@@ -298,7 +302,7 @@ module.exports = {
                 });
 
             // 4️⃣ Atualizar carteirinha
-            await knex("ueb_sistem.carteirinha_user")
+            await knex("areadoaluno.carteirinha_user")
                 .where("id", carteirinha.id)
                 .update({
                     instituicao: instituicao ?? carteirinha.instituicao,
@@ -314,7 +318,7 @@ module.exports = {
 
             // 5️⃣ Atualizar imagem BASE64 (se enviada)
             if (imagemBase64) {
-                const imagemExistente = await knex("ueb_sistem.carteirinha_image")
+                const imagemExistente = await knex("areadoaluno.carteira")
                     .where({
                         user_id: usuario.id,
                         carteirinha_id: carteirinha.id
@@ -322,15 +326,15 @@ module.exports = {
                     .first();
 
                 if (imagemExistente) {
-                    await knex("ueb_sistem.carteirinha_image")
+                    await knex("areadoaluno.carteira")
                         .where("id", imagemExistente.id)
-                        .update({ image: imagemBase64 });
+                        .update({ imagem: imagemBase64 });
                 } else {
-                    await knex("ueb_sistem.carteirinha_image")
+                    await knex("areadoaluno.carteira")
                         .insert({
                             user_id: usuario.id,
                             carteirinha_id: carteirinha.id,
-                            image: imagemBase64,
+                            imagem: imagemBase64,
                             size: imagemBase64 ? base64ToSize(imagemBase64) : undefined,
                         });
                 }
@@ -361,11 +365,16 @@ module.exports = {
                 });
             }
 
+            console.log(cpf)
+
             // 1️⃣ Buscar usuário
-            const usuario = await knex("ueb_sistem.users")
+            const usuario = await knex("areadoaluno.users")
                 .select("id", "name", "data_nascimento", "cpf", "rg", "email")
                 .where("cpf", cpf)
                 .first();
+
+            console.log(usuario)
+            console.log('---------')
 
             if (!usuario) {
                 return res.json({
@@ -375,7 +384,7 @@ module.exports = {
             }
 
             // 2️⃣ Buscar TODAS as carteirinhas
-            const carteirinhas = await knex("ueb_sistem.carteirinha_user as c")
+            const carteirinhas = await knex("areadoaluno.carteirinha_user as c")
                 .select(
                     "c.id",
                     "c.user_id",
@@ -387,17 +396,17 @@ module.exports = {
                     "c.cod_uso",
                     "c.ano",
                     "c.approved",
-                    "i.image"
+                    "i.imagem"
                 )
                 .leftJoin(
-                    "ueb_sistem.carteirinha_image as i",
-                    function () {
-                        this.on("i.carteirinha_id", "c.id")
-                            .andOn("i.user_id", "c.user_id");
-                    }
+                    "areadoaluno.carteira as i",
+                    "i.id", // Coluna na tabela carteira
+                    "c.id_carteira" // Coluna na tabela carteirinha_user
                 )
                 .where("c.user_id", usuario.id)
                 .orderBy("c.ano", "desc");
+
+            console.log(carteirinhas)
 
             if (!carteirinhas.length) {
                 return res.json({
@@ -423,7 +432,7 @@ module.exports = {
                     validadeCarteirinha: c.validade,
                     ano: c.ano,
                     approved: c.approved,
-                    imagem: c.image || null
+                    imagem: c.imagem || null
                 });
             }
 
